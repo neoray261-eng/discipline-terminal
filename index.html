@@ -222,6 +222,37 @@
 
   .helper { color: var(--muted); font-size: 11px; margin-top: 4px; }
 
+  /* ═══════════════════ SCREENSHOT SUPPORT ═══════════════════ */
+  .shot-drop {
+    border: 2px dashed var(--border); border-radius: 8px;
+    padding: 20px; text-align: center; cursor: pointer;
+    color: var(--muted); font-size: 13px; transition: all 0.2s;
+  }
+  .shot-drop:hover { border-color: var(--bull); color: var(--dim); background: rgba(0,217,163,0.03); }
+  .shot-drop.has-image { padding: 8px; border-style: solid; }
+  .shot-preview {
+    max-width: 100%; max-height: 300px; border-radius: 4px;
+    display: block; margin: 0 auto;
+  }
+  .shot-thumb {
+    width: 40px; height: 28px; object-fit: cover; border-radius: 3px;
+    cursor: pointer; border: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .shot-thumb:hover { border-color: var(--bull); }
+  .shot-clear {
+    display: inline-block; margin-top: 6px; padding: 4px 10px;
+    background: transparent; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--muted); font-size: 11px; cursor: pointer;
+  }
+  #shotModal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+    z-index: 300; display: none; align-items: center; justify-content: center;
+    padding: 20px; cursor: zoom-out;
+  }
+  #shotModal.open { display: flex; }
+  #shotModal img { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 6px; }
+
   /* ═══════════════════ WELCOME / OATH SCREEN ═══════════════════ */
   #welcome {
     position: fixed; inset: 0; z-index: 500;
@@ -733,6 +764,11 @@
 
 </main>
 
+<!-- Screenshot Full-view Modal -->
+<div id="shotModal" onclick="this.classList.remove('open')">
+  <img id="shotModalImg" src="">
+</div>
+
 <!-- Post-Trade Review Modal -->
 <div class="modal-bg" id="reviewModal">
   <div class="modal">
@@ -1165,6 +1201,9 @@ function renderJournal() {
   }
   const rows = trades.map(t => {
     const isOpen = t.outcome === 'OPEN' || t.outcome == null;
+    const shotCell = t.screenshot
+      ? `<img src="${t.screenshot}" class="shot-thumb" onclick="event.stopPropagation();openShotFull('${t.screenshot.replace(/'/g,"\\'")}')"/>`
+      : '<span style="color:var(--muted);">—</span>';
     return `
     <tr onclick="openReview('${t.id}')">
       <td class="mono">${(t.date||'').slice(5)}</td>
@@ -1176,12 +1215,13 @@ function renderJournal() {
       <td class="${(t.pnl_usd||0)>0?'pos':(t.pnl_usd||0)<0?'neg':''}">${isOpen?'—':fmt$(t.pnl_usd)}</td>
       <td>${isOpen?'<span class="tag b">OPEN</span>':t.outcome==='WIN'?'<span class="tag a">WIN</span>':'<span class="tag c">LOSS</span>'}</td>
       <td>${t.execution_grade?`<span class="tag ${t.execution_grade.toLowerCase()}">${t.execution_grade}</span>`:'—'}</td>
+      <td>${shotCell}</td>
     </tr>`;
   }).join('');
   $('journalTable').innerHTML = `
     <table class="data">
       <thead><tr>
-        <th>תאריך</th><th>מקור</th><th>נכס</th><th>כיוון</th><th>כניסה</th><th>R:R</th><th>P&L</th><th>תוצאה</th><th>ציון</th>
+        <th>תאריך</th><th>מקור</th><th>נכס</th><th>כיוון</th><th>כניסה</th><th>R:R</th><th>P&L</th><th>תוצאה</th><th>ציון</th><th>📸</th>
       </tr></thead><tbody>${rows}</tbody>
     </table>`;
 }
@@ -1197,6 +1237,7 @@ const MISTAKE_TAGS = [
 let reviewTradeId = null;
 function openReview(id) {
   reviewTradeId = id;
+  pendingShotDataUrl = null;   // reset per-modal-open
   const trade = state.trades.find(t => t.id === id) ||
                 (state.botCache.data||[]).find(s => 'bot_' + (s.subject||s.ts) === id);
   if (!trade || trade.source === 'bot') {
@@ -1254,6 +1295,16 @@ function openReview(id) {
       <label>SUDS ביציאה</label>
       <input type="number" id="r_exit_suds" min="0" max="10" placeholder="0-10">
     </div>
+
+    <h4 style="margin:16px 0 8px;">📸 צילום מסך של הגרף (אופציונלי):</h4>
+    <div class="shot-drop ${t.screenshot?'has-image':''}" id="shotDrop" onclick="triggerShotUpload()">
+      ${t.screenshot
+        ? `<img src="${t.screenshot}" class="shot-preview" id="shotPreview"><br>
+           <span class="shot-clear" onclick="event.stopPropagation();clearShot()">🗑️ מחק</span>`
+        : `📎 לחץ להעלאה · או הדבק צילום מסך עם <strong style="color:var(--dim);">Ctrl+V</strong>`}
+    </div>
+    <input type="file" id="shotFile" accept="image/*" style="display:none;" onchange="handleShotUpload(event)">
+
     <button class="btn" onclick="saveReview()" style="width:100%;margin-top:12px;">💾 שמור סקירה</button>
     <button class="btn ghost small" onclick="deleteTrade('${t.id}')" style="width:100%;margin-top:8px;">🗑️ מחק עסקה</button>
   `;
@@ -1263,6 +1314,65 @@ function closeReview() {
   $('reviewModal').classList.remove('open');
   reviewTradeId = null;
 }
+// ═══════════════════════════════ SCREENSHOT SUPPORT ═══════════════════════════════
+
+let pendingShotDataUrl = null;
+
+function triggerShotUpload() { $('shotFile').click(); }
+
+function handleShotUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  _compressAndPreview(file);
+}
+
+function _compressAndPreview(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      // Resize to max 1000px width, JPEG quality 0.7 — keeps localStorage lean
+      const MAX_W = 1000;
+      const scale = img.width > MAX_W ? MAX_W / img.width : 1;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      pendingShotDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+      const drop = $('shotDrop');
+      drop.classList.add('has-image');
+      drop.innerHTML = `<img src="${pendingShotDataUrl}" class="shot-preview"><br>
+        <span class="shot-clear" onclick="event.stopPropagation();clearShot()">🗑️ מחק</span>`;
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearShot() {
+  pendingShotDataUrl = '';
+  const drop = $('shotDrop');
+  drop.classList.remove('has-image');
+  drop.innerHTML = `📎 לחץ להעלאה · או הדבק צילום מסך עם <strong style="color:var(--dim);">Ctrl+V</strong>`;
+}
+
+function openShotFull(dataUrl) {
+  $('shotModalImg').src = dataUrl;
+  $('shotModal').classList.add('open');
+}
+
+// Global Ctrl+V handler when review modal is open
+document.addEventListener('paste', e => {
+  if (!$('reviewModal').classList.contains('open')) return;
+  const items = (e.clipboardData || {}).items || [];
+  for (const item of items) {
+    if (item.type && item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) { _compressAndPreview(file); break; }
+    }
+  }
+});
+
 function saveReview() {
   const t = state.trades.find(x => x.id === reviewTradeId);
   if (!t) return;
@@ -1282,6 +1392,10 @@ function saveReview() {
   t.mistake_tags = Array.from(document.querySelectorAll('#r_tags .t.on')).map(el => el.dataset.tag);
   t.review_notes = $('r_notes').value;
   t.exit_suds = parseFloat($('r_exit_suds').value) || null;
+  if (pendingShotDataUrl !== null) {
+    t.screenshot = pendingShotDataUrl;   // '' means user cleared it
+  }
+  pendingShotDataUrl = null;
   save();
   closeReview();
   renderAll();
@@ -1581,15 +1695,98 @@ setInterval(() => fetchBotSignals(false), 60000);
 
 // ═══════════════════════════════ WELCOME · OATH ═══════════════════════════════
 
-const OATH_QUOTES = [
-  ['"עקביות היא פונקציה של גישה, לא של אסטרטגיה."', 'מרק דגלס'],
-  ['"הכניסה הכי מסוכנת היא זו שאחרי הפסד."', 'מרק דגלס'],
-  ['"רוב הסוחרים חושבים שהם רוצים כסף. הם רוצים דופמין."', 'אריק סטול'],
-  ['"אתה לא מסחר במניות — אתה מסחר בעצמך."', 'ג\'ק שוואגר'],
-  ['"הטוב באויב של הגדול. הדיסציפלינה מגדילה."', 'משל השוק'],
-  ['"מסחר מלחץ = עסקה גרועה."', 'בריט סטינברגר'],
-  ['"טרייד טוב ≠ טרייד מנצח. טרייד טוב = טרייד לפי הכלל."', 'מייק בלפיורה'],
-  ['"השוק לא בורח. הסבלנות היא עורק החיים."', 'ואן תארפ'],
+// 40 טיפים מקצועיים — נבחר לפי יום בשנה (יום 1 → טיפ 1, יום 41 → טיפ 1 שוב)
+// כל טיפ = כותרת + הסבר + מקור, מהכי-מוכרים בתעשיית המסחר
+const PRO_TIPS = [
+  // ── Mindset (Douglas, Steenbarger, Byeajee) ──────────────────────────
+  { c: '🧠 מיינדסט', t: 'התוצאה של עסקה בודדת = רעש. התוצאה של 20 עסקאות = אותה.',
+    b: 'אל תשפוט את הסטרטגיה שלך אחרי 3 עסקאות. תסתכל על מדגם של 20+ עסקאות כדי לראות אם היא עובדת.', s: 'מרק דגלס · Trading in the Zone' },
+  { c: '🧠 מיינדסט', t: 'כל עסקה עצמאית. אין קשר בין העסקה הקודמת לזאת.',
+    b: 'אחרי הפסד — הגישה הכי מסוכנת היא "אני חייב להחזיר". השוק לא חייב לך כלום.', s: 'מרק דגלס' },
+  { c: '🧠 מיינדסט', t: 'הכניסה הכי מסוכנת היא זו שאחרי הפסד.',
+    b: 'המוח עדיין בשוק הפסד. הרגש דוחף למעשה. תמיד תיקח 15 דק\' בין הפסד לעסקה הבאה.', s: 'מרק דגלס' },
+  { c: '🧠 מיינדסט', t: 'אתה לא מסחר במניות — אתה מסחר בעצמך.',
+    b: 'הסטרטגיה טובה. השאלה היא: האם *אתה* יכול לבצע אותה? כל הפער הוא פסיכולוגי.', s: 'ג\'ק שוואגר · Market Wizards' },
+  { c: '🧠 מיינדסט', t: 'רוב הסוחרים חושבים שהם רוצים כסף. הם רוצים דופמין.',
+    b: 'לפני עסקה — שאל: "אני נכנס כי יש setup, או כי משעמם לי?" רק הראשון בסדר.', s: 'אריק סטול' },
+  { c: '🧠 מיינדסט', t: 'הפער בין הידע לביצוע = פסיכולוגיה.',
+    b: 'אתה יודע את הכלל. אתה שובר אותו. זה לא בגלל בורות — זה בגלל רגש. הפתרון: מערכת שחוסמת אותך.', s: 'טרייידינג קומפוזור · Byeajee' },
+  { c: '🧠 מיינדסט', t: 'הפוקוס צריך להיות על התהליך, לא על התוצאה.',
+    b: 'ציון עצמי לפי: "האם עקבתי אחרי התוכנית?" — לא לפי "כמה הרווחתי". רווח מגיע כשעקבת בעקביות.', s: 'ואן תארפ' },
+  { c: '🧠 מיינדסט', t: 'ההצלחה במסחר = יכולת להסתדר עם ודאות נמוכה.',
+    b: 'לא כל עסקה תעבוד. אפילו הסטרטגיה הכי טובה תפסיד 40% מהזמן. תקבל את זה או תפרוש.', s: 'מרק דגלס' },
+
+  // ── Execution (Bellafiore, Krompass) ─────────────────────────────────
+  { c: '🎯 ביצוע', t: 'טרייד טוב ≠ טרייד מנצח. טרייד טוב = טרייד לפי הכלל.',
+    b: 'עסקה מנצחת עם החלטה גרועה = A על התוצאה, F על הביצוע. תדרג את עצמך על ההחלטה, לא על הכיס.', s: 'מייק בלפיורה · One Good Trade' },
+  { c: '🎯 ביצוע', t: 'לפני שאתה לוחץ Buy — כתוב את התוכנית ב-20 שניות.',
+    b: 'נכס, כיוון, כניסה, סטופ, יעד, R:R. אם זה לא נכנס ל-20 שניות — זה לא setup.', s: 'קים קרומפאס' },
+  { c: '🎯 ביצוע', t: 'לפני כל עסקה — סמן את שם ה-Setup מהרשימה.',
+    b: 'אם אין שם ברשימה שלך = זה לא setup, זה תחזית. תחזיות מפסידות כסף.', s: 'מייק בלפיורה' },
+  { c: '🎯 ביצוע', t: 'איכות > כמות. 2 עסקאות איכותיות עדיפות על 8 בינוניות.',
+    b: 'המקצוענים סוחרים פחות מרוב הסוחרים. הם מחכים ל-A-grade. תעשה כמוהם.', s: 'SMB Capital' },
+  { c: '🎯 ביצוע', t: 'המחיר לא חייב לחזור למקום שיצאת ממנו.',
+    b: 'יצאת עם רווח קטן? זה בסדר. השוק לא חייב לתת לך את השיא. הכי גרוע לצפות ב"מה יכולתי להרוויח".', s: 'בריט סטינברגר' },
+  { c: '🎯 ביצוע', t: 'רק סטאפים שאתה יכול להסביר לילד — קח.',
+    b: 'אם אתה לא יכול לומר בקצרה "אני נכנס כי X, Y, Z" — זה סימן שאתה לא רואה את זה בבירור.', s: 'מנטור SMB' },
+  { c: '🎯 ביצוע', t: 'המתן ל-3 retests על POI לפני כניסה.',
+    b: 'הראשון = רעש. השני = מעניין. השלישי = מוכן. סבלנות = דיוק.', s: 'סוחרי ICT מקצועיים' },
+  { c: '🎯 ביצוע', t: 'כל עסקה חדשה = הזדמנות חדשה. הישן לא רלוונטי.',
+    b: 'העסקה הקודמת הסתיימה. תוציא אותה מהראש. הבאה = 0-0 עדיין.', s: 'ואן תארפ' },
+
+  // ── Risk Management (Van Tharp, Kreil) ───────────────────────────────
+  { c: '💰 סיכון', t: 'לא סיכון קבוע = לא סטרטגיה קבועה.',
+    b: 'אם ב-3 עסקאות סיכנת $100/$150/$80 — אתה בעצם 3 טריידרים שונים. תבחר סכום קבוע ותעמוד בו.', s: 'ואן תארפ' },
+  { c: '💰 סיכון', t: 'סטופ יומי מקסימלי = 3× סיכון של עסקה בודדת.',
+    b: 'אחרי 3 הפסדים ברצף — כמעט תמיד סימן לדיסאלייגנמנט. עצור. תחזור מחר.', s: 'אנטון קרייל' },
+  { c: '💰 סיכון', t: 'הזמן להזיז סטופ למחיר טוב יותר = *אחרי* שהעסקה עובדת, לא לפני.',
+    b: 'הזזת סטופ להפסד גדול יותר = לא מנהל סיכון, אתה תופר את הכיס שלך.', s: 'מקצוענים בוול סטריט' },
+  { c: '💰 סיכון', t: 'R:R 1:2 מינימום. פחות מזה = הימור.',
+    b: 'עם 50% win-rate ו-1:2 = רווחי. עם 60% win-rate ו-1:1 = יוצא אחת. סיכון-סיכוי > דיוק.', s: 'מתמטיקת השוק' },
+  { c: '💰 סיכון', t: 'אם רק עסקה 1 אין לך יכולת לשאת את הסטופ = דלג.',
+    b: 'עצם הפחד לפני כניסה = הסטופ גדול מדי. הקטן חוזים או תעבור לסטאפ עם סטופ הדוק.', s: 'ניהול סיכון בסיסי' },
+  { c: '💰 סיכון', t: 'הרווח הכי גדול לא ממקסום עסקה, אלא ממניעת הפסדים.',
+    b: 'סוחר מקצועי מרוויח לא בגלל שהוא מוצא setups טובים יותר — אלא בגלל שהוא מפסיד פחות בגרועים.', s: 'פול טודור ג\'ונס' },
+  { c: '💰 סיכון', t: 'Giveback = כשנתת חזרה 30% מהשיא של היום = סוגר.',
+    b: 'ירידה מ-$200 רווח ל-$140 היא סימן שהמומנטום שלך נגמר. תעצור לפני שהופך לאדום.', s: 'SMB 30% Rule' },
+  { c: '💰 סיכון', t: 'סטופ מקסימלי ב-NQ = 25 נק\'. יותר מזה = דלג.',
+    b: 'אם setup דורש 30 נק\' סטופ בשביל להיות תקף — הוא לא מתאים לך בגודל של $100.', s: 'הסטרטגיה שלך' },
+
+  // ── Discipline (Byeajee, general) ────────────────────────────────────
+  { c: '🛡️ דיסציפלינה', t: 'הכלל שאתה שובר היום = ההפסד שלך מחר.',
+    b: 'כל פעם ששברת "כלל קטן" — זה מנרמל את השבירה של הכלל הבא. תישאר קפדני.', s: 'טרייידינג קומפוזור' },
+  { c: '🛡️ דיסציפלינה', t: 'הצלחה של יום מסחר = "עקבתי אחרי התוכנית", לא "הרווחתי".',
+    b: 'סוחר עקבי שהפסיד היום = סוחר מנצח. סוחר לא-עקבי שהרוויח היום = בעיה עתידית.', s: 'מייק בלפיורה' },
+  { c: '🛡️ דיסציפלינה', t: 'אם צריך לשכנע את עצמך להיכנס = אל תיכנס.',
+    b: 'עסקאות איכותיות "צועקות" אליך. כשאתה מנסה למצוא הצדקות — זה סימן.', s: 'סוחרי אליטה' },
+  { c: '🛡️ דיסציפלינה', t: 'ההבדל בין מקצוען לחובב = מה קורה אחרי הפסד.',
+    b: 'חובב = revenge trade. מקצוען = מנתח, אוכל, ישן, חוזר. הראש רגוע מנצח.', s: 'ד"ר בריט סטינברגר' },
+  { c: '🛡️ דיסציפלינה', t: 'אם ה-SUDS שלך ≥ 7 בבוקר = היום לא יום מסחר.',
+    b: 'מצב רגשי ירוד = כניסות רעות. אין בושה לוותר על יום. יש בושה לאבד כסף בגלל שסחרת כשלא היית מוכן.', s: 'סטינברגר · SUDS Scale' },
+  { c: '🛡️ דיסציפלינה', t: 'החלטה לסגור עסקה חייבת להיות פחות טעונה מהחלטה לפתוח אותה.',
+    b: 'תכתוב מראש: "אני יוצא ב-X או ב-Y". אם אתה מחליט תוך כדי = הרגש שולט.', s: 'מרק דגלס' },
+  { c: '🛡️ דיסציפלינה', t: 'המערכת חוסמת אותך = המערכת אוהבת אותך.',
+    b: 'Cooldown, iron rule, max trades — אלה לא עונשים. אלה החברים שלך בזמן שהראש שלך אויב.', s: 'עקרון Ulysses Contract' },
+  { c: '🛡️ דיסציפלינה', t: 'סוחר טוב אומר "לא" ל-90% מההזדמנויות.',
+    b: 'המחיר משתנה כל שנייה. יש 1000 setups פוטנציאליים ביום. תבחר את ה-3 הכי טובים ותוותר על כל השאר.', s: 'ג\'סי ליברמור' },
+
+  // ── Data/Reflection ─────────────────────────────────────────────────
+  { c: '📊 נתונים', t: 'ללא יומן = ללא למידה = ללא צמיחה.',
+    b: 'כל עסקה שלא נרשמה = הזדמנות שהחמצת ללמוד. תיעוד מדויק > מקצועיות.', s: 'Edgewonk' },
+  { c: '📊 נתונים', t: 'Van Tharp SQN מעל 2 = מערכת טובה. מעל 2.5 = מערכת elite.',
+    b: 'SQN מודד סטטיסטית את איכות המערכת שלך. חשב אחרי 20+ עסקאות. אם מתחת 1.6 — משהו שבור.', s: 'ואן תארפ · SQN' },
+  { c: '📊 נתונים', t: 'תבדוק את הביצועים שלך לפי שעה, לא רק סה"כ.',
+    b: 'לרוב הסוחרים יש שעת "רוצחת" שבה הם מפסידים 70%. תמצא אותה — ותפסיק לסחור בה.', s: 'בריט סטינברגר' },
+  { c: '📊 נתונים', t: 'הסקירה השבועית = הכלי הכי חשוב לצמיחה.',
+    b: 'שבת בבוקר, 30 דק\' — עבור על כל עסקה. תיצור patterns אמיתיים על עצמך. זה מה שמפריד תלמיד ממקצוען.', s: 'SMB · Weekly Review' },
+  { c: '📊 נתונים', t: 'התייג את הטעויות שלך. הן חוזרות.',
+    b: 'תגיות: revenge, chased, moved-stop, no-setup. אחרי חודש תראה שיש 1-2 טעויות שאתה עושה 80% מהזמן.', s: 'Edgewonk Mistake Tags' },
+  { c: '📊 נתונים', t: 'תשווה: ביצועים במצב רגוע (SUDS ≤3) מול מתוח (SUDS ≥6).',
+    b: 'ברוב הסוחרים — יש הבדל של פי 3 ברווח. הראש שלך יותר חשוב מהטריגר.', s: 'סטינברגר Trading Psychology 2.0' },
+  { c: '📊 נתונים', t: 'אם הסטרטגיה עובדת בסימולציה אבל לא בפועל = הבעיה בביצוע.',
+    b: 'אל תשנה סטרטגיה. תפצל את הבעיה: מה הבדל בין הסימולציה למה שאתה עושה בפועל? זה הפער הפסיכולוגי.', s: 'Sim-to-Live Bridge' },
+  { c: '📊 נתונים', t: 'הזמן הכי טוב לזהות רגש = מיד אחרי סגירת עסקה.',
+    b: 'תרשום מה הרגשת בכניסה ומה ביציאה. אחרי חודש = מיפוי מלא של הרגש שלך. זה משנה חיים.', s: 'ד"ר סטינברגר' },
 ];
 
 const oathChecks = [false, false, false];
@@ -1649,9 +1846,26 @@ function typeBoot() {
       bootDone = true;
       setTimeout(() => {
         $('oathSection').classList.add('show');
-        // random quote
-        const q = OATH_QUOTES[Math.floor(Math.random() * OATH_QUOTES.length)];
-        $('quoteLine').innerHTML = q[0] + ' <strong>— ' + q[1] + '</strong>';
+        // Daily pro tip — deterministic by day-of-year (same day = same tip)
+        const now = new Date();
+        const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+        const tip = PRO_TIPS[dayOfYear % PRO_TIPS.length];
+        $('quoteLine').innerHTML = `
+          <div style="text-align:right;direction:rtl;padding:14px 16px;
+                      background:rgba(255,180,84,0.06);border:1px solid rgba(255,180,84,0.25);
+                      border-radius:8px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;
+                        color:#FFB454;margin-bottom:8px;">${tip.c} · טיפ היום</div>
+            <div style="font-family:'Assistant',sans-serif;color:#E4E7EB;font-size:15px;
+                        font-weight:600;line-height:1.4;margin-bottom:8px;">
+              "${tip.t}"
+            </div>
+            <div style="font-family:'Assistant',sans-serif;color:#A0A6B4;font-size:13px;
+                        line-height:1.6;">${tip.b}</div>
+            <div style="font-family:'Assistant',sans-serif;color:#5B6274;font-size:11px;
+                        margin-top:10px;font-style:italic;">— ${tip.s}</div>
+          </div>
+        `;
       }, 400);
       return;
     }
