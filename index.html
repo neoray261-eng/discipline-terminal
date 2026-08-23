@@ -245,19 +245,20 @@
   .welcome-logo .name .n em { color: var(--bull); font-style: normal; }
 
   .boot-log {
-    font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--dim);
-    text-align: right; direction: rtl; background: rgba(10,14,23,0.7);
+    font-family: 'JetBrains Mono', 'Assistant', monospace; font-size: 13px; color: var(--dim);
+    background: rgba(10,14,23,0.7);
     border: 1px solid var(--border); border-radius: 8px;
     padding: 20px 24px; min-height: 220px; margin-bottom: 24px;
-    line-height: 1.8; text-align: left; direction: ltr;
+    line-height: 1.8; text-align: right; direction: rtl;
   }
   .boot-log .line { opacity: 0; animation: bootIn 0.4s forwards; }
-  .boot-log .line.ok::before  { content: '✓ '; color: var(--bull); font-weight: 700; }
-  .boot-log .line.warn::before{ content: '⚠ '; color: var(--star); font-weight: 700; }
-  .boot-log .line.err::before { content: '✗ '; color: var(--bear); font-weight: 700; }
+  .boot-log .line.ok  { color: var(--dim); }
+  .boot-log .line.ok::after   { content: ' ✓'; color: var(--bull); font-weight: 700; }
+  .boot-log .line.warn::after { content: ' ⚠'; color: var(--star); font-weight: 700; }
+  .boot-log .line.err::after  { content: ' ✗'; color: var(--bear); font-weight: 700; }
   .boot-log .line.hdr { color: var(--bull); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
   .boot-log .line.stat { color: var(--star); }
-  .boot-log .line.pending::before { content: '… '; color: var(--dim); }
+  .boot-log .line.pending::after { content: ' …'; color: var(--dim); }
   .boot-log .cursor { display: inline-block; width: 8px; height: 14px; background: var(--bull);
     animation: blink 1s infinite; vertical-align: middle; margin-left: 4px; }
   @keyframes bootIn { to { opacity: 1; } }
@@ -325,8 +326,8 @@
         <path d="M 10 16 L 14.5 20.5 L 22 12" stroke="#00D9A3" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <div class="name">
-        <div class="k">DISCIPLINE TERMINAL</div>
-        <div class="n">Nehorai · <em>Alpha</em></div>
+        <div class="k">טרמינל · דיסציפלינה</div>
+        <div class="n">נהוראי · <em>אלפא</em></div>
       </div>
     </div>
 
@@ -352,7 +353,7 @@
         <div class="num">03</div>
       </div>
 
-      <button id="oathEnter" onclick="enterTerminal()">▸ ENTER TERMINAL</button>
+      <button id="oathEnter" onclick="enterTerminal()">◂ סמן את כל השבועות</button>
 
       <div class="quote-line" id="quoteLine"></div>
     </div>
@@ -362,8 +363,8 @@
 <header>
   <div class="header-inner">
     <div class="brand">
-      <span class="logo">DISCIPLINE · TERMINAL</span>
-      <h1><span>◤</span> Nehorai · <span>Alpha</span></h1>
+      <span class="logo">טרמינל · דיסציפלינה</span>
+      <h1><span>◤</span> נהוראי · <span>אלפא</span></h1>
     </div>
     <div class="status-badges" id="statusBadges"></div>
   </div>
@@ -372,7 +373,7 @@
     <button data-tab="entry">🚦 כניסה לעסקה</button>
     <button data-tab="journal">📔 יומן</button>
     <button data-tab="analytics">📊 אנליטיקה</button>
-    <button data-tab="playbook">📖 Playbook</button>
+    <button data-tab="playbook">📖 ספר סטאפים</button>
     <button data-tab="settings">⚙️ הגדרות</button>
   </nav>
 </header>
@@ -517,6 +518,15 @@
       <div class="helper">הכתובת הציבורית של קובץ ה-signals.json ב-GitHub. הטרמינל קורא אותו כל 60 שניות.</div>
       <button class="btn ghost small" onclick="fetchBotSignals(true)" style="margin-top:8px;">🔄 רענן עכשיו</button>
       <div id="botFetchStatus" class="helper" style="margin-top:8px;"></div>
+    </div>
+
+    <h2 class="section-title">🛡️ טקס הכניסה</h2>
+    <div class="card">
+      <button class="btn ghost small" onclick="showOathAgain()">🔄 הצג את טקס הכניסה מחדש</button>
+      <div class="helper" style="margin-top:8px;">
+        אם עשית את הטקס וסמנת שבועה — תופיעה בבוקר הבא אוטומטית.<br>
+        לחיצה כאן תציג אותו מיד (למקרה שרוצה לחזור על השבועה או להראות למישהו).
+      </div>
     </div>
 
     <h2 class="section-title">📤 גיבוי / שחזור</h2>
@@ -1401,30 +1411,30 @@ function typeBoot() {
   const dow = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][(new Date().getDay()+1)%7];
   const dateStr = new Date().toLocaleDateString('he-IL');
   const lines = [
-    { c: 'hdr',  t: '> DISCIPLINE TERMINAL · v1.0' },
-    { c: '',     t: '> Session: ' + dow + ' · ' + dateStr },
-    { c: '',     t: '>' },
-    { c: '',     t: '> Loading trader profile...' },
-    { c: 'ok',   t: '   Trader: Nehorai' },
-    { c: 'ok',   t: '   Strategy: SMC (Asia Range + Deviations)' },
-    { c: '',     t: '>' },
-    { c: '',     t: '> System check:' },
-    { c: 'ok',   t: '   Playbook loaded (' + state.playbook.length + ' setups)' },
-    { c: 'ok',   t: '   Risk cap: $' + state.settings.dailyCap + '/day' },
-    { c: 'ok',   t: '   Max trades: ' + state.settings.maxTrades },
-    { c: 'ok',   t: '   Cooldown: ' + state.settings.coolMin + 'min after ' + state.settings.coolAfter + ' losses' },
-    { c: 'ok',   t: '   Trading windows: 07:00-16:00 · 17:00-21:00' },
-    { c: 'ok',   t: '   Bot feed: connected' },
-    { c: '',     t: '>' },
+    { c: 'hdr',  t: 'טרמינל דיסציפלינה · v1.0 ‹' },
+    { c: '',     t: 'סשן: יום ' + dow + ' · ' + dateStr + ' ‹' },
+    { c: '',     t: '‹' },
+    { c: '',     t: 'טוען פרופיל סוחר... ‹' },
+    { c: 'ok',   t: '   סוחר: נהוראי' },
+    { c: 'ok',   t: '   אסטרטגיה: SMC (ריינג\' אסיה + סטיות פיבו)' },
+    { c: '',     t: '‹' },
+    { c: '',     t: 'בדיקת מערכת: ‹' },
+    { c: 'ok',   t: '   ספר סטאפים נטען (' + state.playbook.length + ' סטאפים)' },
+    { c: 'ok',   t: '   סיכון יומי מקסימלי: $' + state.settings.dailyCap },
+    { c: 'ok',   t: '   מקסימום עסקאות: ' + state.settings.maxTrades },
+    { c: 'ok',   t: '   Cooldown: ' + state.settings.coolMin + ' דק\' אחרי ' + state.settings.coolAfter + ' הפסדים' },
+    { c: 'ok',   t: '   חלונות מסחר: 07:00-16:00 · 17:00-21:00' },
+    { c: 'ok',   t: '   חיבור לבוט: מחובר' },
+    { c: '',     t: '‹' },
   ];
   if (yTrades.length > 0) {
-    lines.push({ c: 'stat', t: '> Yesterday: ' + yTrades.length + ' trades · ' + yWin + 'W ' + yLoss + 'L · ' + (yPnl>=0?'+':'') + '$' + yPnl.toFixed(0) });
-    if (yDisc !== null) lines.push({ c: 'stat', t: '> Discipline: ' + yDisc + '%' + (yDisc === 100 ? ' ✓' : '') });
+    lines.push({ c: 'stat', t: 'אתמול: ' + yTrades.length + ' עסקאות · ' + yWin + ' זכיות · ' + yLoss + ' הפסדים · ' + (yPnl>=0?'+':'') + '$' + yPnl.toFixed(0) + ' ‹' });
+    if (yDisc !== null) lines.push({ c: 'stat', t: 'דיסציפלינה: ' + yDisc + '%' + (yDisc === 100 ? ' ✓' : '') + ' ‹' });
   } else {
-    lines.push({ c: '', t: '> No trades yesterday.' });
+    lines.push({ c: '', t: 'אין עסקאות מאתמול. ‹' });
   }
-  lines.push({ c: '', t: '>' });
-  lines.push({ c: 'warn', t: '> OATH REQUIRED before terminal access.' });
+  lines.push({ c: '', t: '‹' });
+  lines.push({ c: 'warn', t: 'חובה שבועה לפני כניסה לטרמינל. ‹' });
 
   let i = 0;
   const emit = () => {
@@ -1456,7 +1466,7 @@ function oathToggle(idx) {
   el.classList.toggle('checked', oathChecks[idx]);
   const allChecked = oathChecks.every(x => x);
   $('oathEnter').classList.toggle('ready', allChecked);
-  $('oathEnter').textContent = allChecked ? '▸ ENTER TERMINAL' : '⬜ סמן את כל השבועות';
+  $('oathEnter').textContent = allChecked ? '◂ הכנס לטרמינל' : '◂ סמן את כל השבועות';
 }
 
 function enterTerminal() {
@@ -1468,6 +1478,20 @@ function enterTerminal() {
 
 function maybeShowWelcome() {
   if (!shouldShowWelcome()) return;
+  $('welcome').classList.add('show');
+  setTimeout(typeBoot, 300);
+}
+
+function showOathAgain() {
+  // Reset today's oath so it re-appears
+  LS.del(oathKey());
+  oathChecks[0] = oathChecks[1] = oathChecks[2] = false;
+  document.querySelectorAll('.oath-item').forEach(el => el.classList.remove('checked'));
+  $('oathEnter').classList.remove('ready');
+  $('oathEnter').textContent = '◂ סמן את כל השבועות';
+  $('oathSection').classList.remove('show');
+  bootDone = false;
+  $('welcome').classList.remove('fading');
   $('welcome').classList.add('show');
   setTimeout(typeBoot, 300);
 }
