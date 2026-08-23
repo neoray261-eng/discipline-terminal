@@ -374,6 +374,7 @@
     <button data-tab="journal">📔 יומן</button>
     <button data-tab="analytics">📊 אנליטיקה</button>
     <button data-tab="playbook">📖 ספר סטאפים</button>
+    <button data-tab="glossary">📚 מילון</button>
     <button data-tab="settings">⚙️ הגדרות</button>
   </nav>
 </header>
@@ -493,6 +494,198 @@
     <h2 class="section-title">📖 Setups מוגדרים</h2>
     <div id="playbookList"></div>
     <button class="btn ghost small" onclick="pbAdd()" style="margin-top:16px;">+ הוסף Setup</button>
+  </section>
+
+  <!-- ═════════════════════════ GLOSSARY ═════════════════════════ -->
+  <section class="tab" id="tab-glossary">
+    <div class="card hi" style="margin-bottom:20px;">
+      <div style="direction:rtl;text-align:right;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:6px;">SMC GLOSSARY · HEBREW</div>
+        <h3 style="margin:0 0 6px;font-size:20px;">📚 המילון המלא — כל המושגים שתראה במיילים ובדשבורדים</h3>
+        <div style="color:var(--dim);font-size:13px;line-height:1.6;">
+          שמור למועדפים. כל מונח שיופיע בהתראות, בבריפינג הבוקר או בדשבורד — יש לו כאן הסבר בעברית עם דוגמה.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Critical -->
+    <h2 class="section-title">🎯 מונחים קריטיים</h2>
+    <div class="card">
+      <div style="direction:rtl;text-align:right;">
+        <h4 style="color:var(--bull);margin:0 0 6px;font-size:16px;">POI · Point Of Interest · אזור עניין</h4>
+        <p style="color:var(--dim);font-size:13px;line-height:1.7;margin:0 0 14px;">
+          <strong style="color:var(--text);">המקום שאתה מחפש להיכנס בו.</strong>
+          הצילוב של סטייה + FVG/BPR = POI פעיל.
+          <br><em style="color:var(--muted);">דוגמה: אזור תחתון-1 (20,775-20,782) שיש בו FVG שורי → POI = כאן LONG.</em>
+        </p>
+        <h4 style="color:var(--bull);margin:14px 0 6px;font-size:16px;">קונפירמציה · Confirmation</h4>
+        <p style="color:var(--dim);font-size:13px;line-height:1.7;margin:0 0 14px;">
+          <strong style="color:var(--text);">אישור שהמהלך אמיתי לפני שאתה נכנס.</strong>
+          המחיר לא רק "נגע" — הראה תגובה. סוגי קונפירמציה:
+        </p>
+        <ul style="color:var(--dim);font-size:13px;line-height:1.8;padding-right:20px;margin:0;">
+          <li>🔴 <strong style="color:var(--bear);">דחייה (Rejection)</strong> — בזון SHORT: נר יורד סוגר את רוב הפער = השוק לא מוכן לעלות</li>
+          <li>🟢 <strong style="color:var(--bull);">בליעה (Absorption)</strong> — בזון LONG: נר עולה בולע את הירידה = השוק בולע מוכרים</li>
+          <li>⏰ <strong style="color:var(--star);">סגירה על 50%</strong> — הנר הכריע חזרה למרכז ה-FVG בלי לפרוץ</li>
+        </ul>
+        <p style="color:var(--muted);font-size:12px;line-height:1.6;margin:10px 0 0;">
+          <strong>כלל אצבע:</strong> אין קונפירמציה = אין כניסה. הבוט ממתין ל-3 נרות רטסט לפני שהוא נכנס.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section: Structural Building Blocks -->
+    <h2 class="section-title">🗺️ מבני מחיר · POI Building Blocks</h2>
+    <div class="card"><table class="data" style="direction:rtl;">
+      <thead><tr><th>מונח</th><th>פירוש</th><th>מתי מופיע</th></tr></thead>
+      <tbody>
+        <tr><td><strong>FVG</strong><br><span style="color:var(--muted);font-size:11px;">Fair Value Gap</span></td>
+          <td>פער תמחור הוגן — 3 נרות שיוצרים פער מחיר לא-מכוסה</td>
+          <td>הבסיס לכל POI</td></tr>
+        <tr><td><span class="pos">🟢 FVG שורי</span></td>
+          <td>פער בכיוון עולה — סימן קניה עתידית</td>
+          <td>בזון LONG (תחתון)</td></tr>
+        <tr><td><span class="neg">🔴 FVG דובי</span></td>
+          <td>פער בכיוון יורד — סימן מכירה עתידית</td>
+          <td>בזון SHORT (עליון)</td></tr>
+        <tr><td><span style="color:var(--bpr);">🟣 BPR</span><br><span style="color:var(--muted);font-size:11px;">Balanced Price Range</span></td>
+          <td>חפיפה של FVG שורי + FVG דובי — <strong>חזק במיוחד</strong></td>
+          <td>בכל צד</td></tr>
+        <tr><td><strong>IFVG</strong><br><span style="color:var(--muted);font-size:11px;">Inverse FVG</span></td>
+          <td>FVG הפוך שנשבר — משמש כ<strong>חיזוק כניסה</strong></td>
+          <td>ב-SMT / כאישור נוסף</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- Section: Range + Deviations -->
+    <h2 class="section-title">📐 ריינג' וסטיות · Range + Deviations</h2>
+    <div class="card"><table class="data" style="direction:rtl;">
+      <thead><tr><th>מונח</th><th>פירוש</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ריינג' אסיה</strong></td><td>הגבוה והנמוך של סשן אסיה (02:00-07:00) — הבסיס לכל היום</td></tr>
+        <tr><td><strong>Range High</strong></td><td>הגבוה של הריינג' — סוויפ שלו = חיפוש reversal</td></tr>
+        <tr><td><strong>Range Low</strong></td><td>הנמוך של הריינג' — אותו דבר לצד השני</td></tr>
+        <tr><td><strong>MID (50%)</strong></td><td>האמצע — <strong style="color:var(--star);">פרימיום מעל, דיסקאונט מתחת</strong></td></tr>
+        <tr><td><span style="color:var(--bear);">פרימיום</span></td><td>מעל MID — עדיף SHORT מרמות עליון</td></tr>
+        <tr><td><span style="color:var(--bull);">דיסקאונט</span></td><td>מתחת MID — עדיף LONG מרמות תחתון</td></tr>
+        <tr><td><strong>סטייה · דוויאציה</strong></td><td>הרחבות פיבו של הריינג' (עליון-1/2/3, תחתון-1/2/3)</td></tr>
+        <tr><td><strong>אזור פעיל (NEXT)</strong></td><td>האזור הראשון שהמחיר עוד לא נגע בו — לפי כלל הרצף</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- Section: Liquidity -->
+    <h2 class="section-title">💧 נזילות · Liquidity</h2>
+    <div class="card"><table class="data" style="direction:rtl;">
+      <thead><tr><th>מונח</th><th>פירוש</th></tr></thead>
+      <tbody>
+        <tr><td><strong>PDH</strong></td><td>Previous Day High · שיא אתמול — מגנט נזילות</td></tr>
+        <tr><td><strong>PDL</strong></td><td>Previous Day Low · שפל אתמול</td></tr>
+        <tr><td><strong>PWH</strong></td><td>Previous Week High · שיא השבוע הקודם</td></tr>
+        <tr><td><strong>PWL</strong></td><td>Previous Week Low · שפל השבוע הקודם</td></tr>
+        <tr><td><strong style="color:var(--star);">PMH</strong></td><td>Previous Month High · שיא החודש הקודם (הכי חזק)</td></tr>
+        <tr><td><strong style="color:var(--star);">PML</strong></td><td>Previous Month Low · שפל החודש הקודם</td></tr>
+        <tr><td><strong>BSL</strong></td><td>Buy-Side Liquidity — סטופים של שורטים <strong>מעל</strong> שיאים</td></tr>
+        <tr><td><strong>SSL</strong></td><td>Sell-Side Liquidity — סטופים של לונגים <strong>מתחת</strong> שפלים</td></tr>
+        <tr><td><strong>EQH</strong></td><td>Equal Highs — 2+ שיאים באותו מחיר = <strong>צביר סטופים</strong> מעל</td></tr>
+        <tr><td><strong>EQL</strong></td><td>Equal Lows — 2+ שפלים באותו מחיר</td></tr>
+        <tr><td><strong>💧 מגנט נזילות</strong></td><td>מקום שהמוסדות "צדים" בו סטופים לפני reversal</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- Section: Trading Actions -->
+    <h2 class="section-title">🎯 פעולות מסחר · Trading Actions</h2>
+    <div class="card"><table class="data" style="direction:rtl;">
+      <thead><tr><th>מונח</th><th>פירוש</th></tr></thead>
+      <tbody>
+        <tr><td><strong>סוויפ · Sweep</strong></td><td>המחיר עבר High/Low ו<strong>חזר מיד</strong> — סחיפת נזילות + reversal</td></tr>
+        <tr><td><strong>שבירה · Break</strong></td><td>המחיר עבר רמה <strong>והמשיך</strong> — לא reversal אלא המשך מגמה</td></tr>
+        <tr><td><strong>Retest</strong></td><td>חזרה למקום שנשבר — לאישור שהוא הפך לתמיכה/התנגדות</td></tr>
+        <tr><td><strong>Reversal · היפוך</strong></td><td>שינוי כיוון מגמה — הכניסה שלנו</td></tr>
+        <tr><td><strong>Displacement · תזוזה</strong></td><td>תנועה חזקה ומהירה — סימן ל-momentum מוסדי</td></tr>
+        <tr><td><span style="color:var(--bull);">🟢 בליעה</span></td><td>נר עולה שבולע נר יורד לפניו — סימן LONG</td></tr>
+        <tr><td><span style="color:var(--bear);">🔴 דחייה</span></td><td>נר יורד שדוחה עלייה — סימן SHORT</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- Section: Trade Management -->
+    <h2 class="section-title">💰 ניהול עסקה · Trade Management</h2>
+    <div class="card"><table class="data" style="direction:rtl;">
+      <thead><tr><th>מונח</th><th>פירוש</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Setup</strong></td><td>הצירוף של POI + כיוון + טריגר — <strong>הכניסה</strong></td></tr>
+        <tr><td><strong>Entry</strong></td><td>מחיר הכניסה</td></tr>
+        <tr><td><strong>Stop · SL</strong></td><td>Stop-Loss — הפסד מקסימלי (אם המחיר יגיע = יוצא)</td></tr>
+        <tr><td><strong>Target · TP</strong></td><td>Take-Profit — יעד הרווח</td></tr>
+        <tr><td><strong>R:R</strong></td><td>Risk/Reward — יחס סיכון:סיכוי (1:2 = מסכן 1 מרוויח 2)</td></tr>
+        <tr><td><strong>טיימפריים · TF</strong></td><td>פרק זמן של הנר: 1m, 5m, 15m, 1h, 4h</td></tr>
+        <tr><td><strong>חוזים</strong></td><td>מספר החוזים שאתה קונה (לפי סיכון $100 ÷ נקודות)</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- Section: Sessions -->
+    <h2 class="section-title">⏰ סשנים וזמנים · Sessions</h2>
+    <div class="card"><table class="data" style="direction:rtl;">
+      <thead><tr><th>סשן</th><th>זמן ישראל</th><th>מה קורה</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Asia · אסיה</strong></td><td class="mono">02:00–07:00</td><td>נבנה הריינג' של היום</td></tr>
+        <tr><td><strong>London · לונדון</strong></td><td class="mono">09:00–12:00</td><td>ניסיון סוויפ ראשון</td></tr>
+        <tr><td><strong>New York</strong></td><td class="mono">14:00–16:00</td><td>Killzone חזק</td></tr>
+        <tr><td><strong>Market Open</strong></td><td class="mono">16:30–23:00</td><td>פתיחת NY cash — הכי תנודתי</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- Section: SMT -->
+    <h2 class="section-title">🚀 מונחים מתקדמים · SMT + Advanced</h2>
+    <div class="card"><table class="data" style="direction:rtl;">
+      <thead><tr><th>מונח</th><th>פירוש</th></tr></thead>
+      <tbody>
+        <tr><td><strong>SMT</strong><br><span style="color:var(--muted);font-size:11px;">Smart Money Technique</span></td>
+          <td>חוסר סנכרון בין נכסים מתואמים (NQ↔ES, Gold↔Silver) — סימן מוקדם להיפוך</td></tr>
+        <tr><td><strong>Divergence · דיברגנס</strong></td><td>הסנכרון בין הנכסים נשבר — סימן להיפוך</td></tr>
+        <tr><td><strong>Correlation · קורלציה</strong></td><td>תנועה מתואמת בין נכסים (למשל NQ ו-ES עולים ביחד)</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- Section: Iron Rules -->
+    <h2 class="section-title">🛡️ החוקים שלך · Iron Rules</h2>
+    <div class="card"><table class="data" style="direction:rtl;">
+      <thead><tr><th>מונח</th><th>הכלל</th></tr></thead>
+      <tbody>
+        <tr><td><strong style="color:var(--bear);">Iron Rule</strong></td><td><strong>אסור</strong> להיכנס בתוך הריינג'</td></tr>
+        <tr><td><strong>Sequential Rule</strong></td><td>כלל רצף — רק אזור פעיל אחד בכל צד (עד שלא נגעו בו)</td></tr>
+        <tr><td><strong>Trading Windows</strong></td><td>חלונות מסחר: <span class="mono">07:00-16:00</span> ו-<span class="mono">17:00-21:00</span> בלבד</td></tr>
+        <tr><td><strong>Cooldown</strong></td><td>נעילה של 15 דק' אחרי 2 הפסדים ברצף</td></tr>
+        <tr><td><strong>SUDS</strong></td><td>Subjective Units of Distress · מדד רגשי 0-10</td></tr>
+        <tr><td><strong>Playbook</strong></td><td>ספר הסטאפים שלך — אין ברשימה = אין עסקה</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- Section: Full email example -->
+    <h2 class="section-title">🧪 דוגמה — פירוק מייל אמיתי</h2>
+    <div class="card">
+      <div style="background:var(--panel-hi);padding:14px 16px;border-radius:6px;font-family:'Assistant',sans-serif;direction:rtl;text-align:right;color:var(--text);font-size:14px;line-height:1.7;border-right:4px solid var(--bull);">
+        🟢 <strong>נאסד"ק · POI נגיעה (לונג)</strong><br>
+        🟢 FVG שורי · טיימפריים 15m · טווח [20,775.00 – 20,782.00] · אזור תחתון-1<br>
+        <span style="color:var(--star);">🎯 POI + Previous (PDL) → סיכון $120</span><br>
+        💰 מחיר: 20,775.50<br>
+        💡 חכה לקונפירמציה של בליעה — סגירת נר על 50% של ה-FVG
+      </div>
+      <div style="margin-top:14px;direction:rtl;text-align:right;color:var(--dim);font-size:13px;line-height:1.9;">
+        <strong style="color:var(--text);">איך קוראים את זה?</strong><br>
+        <strong>1.</strong> <span style="color:var(--bull);">נאסד"ק</span> — הנכס שהופיע<br>
+        <strong>2.</strong> <span style="color:var(--bull);">POI נגיעה (לונג)</span> — המחיר הגיע ל-POI, אתה מחפש LONG<br>
+        <strong>3.</strong> <span style="color:var(--bull);">FVG שורי · 15m</span> — הפער שורי, על טיימפריים 15 דקות<br>
+        <strong>4.</strong> <strong>טווח [20,775-20,782]</strong> — הפער יושב בין המחירים האלה<br>
+        <strong>5.</strong> <strong>אזור תחתון-1</strong> — הפער חופף לאזור סטייה תחתון-1<br>
+        <strong>6.</strong> <span style="color:var(--star);">🎯 POI + Previous (PDL)</span> — האזור <strong>מחוזק</strong> ע"י שפל אתמול = <strong>סיכון $120</strong> במקום $100<br>
+        <strong>7.</strong> <strong>מחיר: 20,775.50</strong> — כרגע המחיר בכניסה של הפער<br>
+        <strong>8.</strong> <strong style="color:var(--bull);">💡 חכה לקונפירמציה של בליעה</strong> = חכה שנר עולה יסגור על אמצע הפער לפני שאתה נכנס
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-top:20px;">
+      MASTER THE LANGUAGE — MASTER THE GAME
+    </div>
   </section>
 
   <!-- ═════════════════════════ SETTINGS ═════════════════════════ -->
