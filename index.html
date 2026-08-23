@@ -1,4 +1,5 @@
-<title>Discipline Terminal</title>
+<title>Discipline Terminal · Nehorai</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230A0E17' rx='6'/><path d='M 16 3.5 L 28.5 16 L 16 28.5 L 3.5 16 Z' fill='none' stroke='%2300D9A3' stroke-width='2.2'/><path d='M 10 16 L 14.5 20.5 L 22 12' stroke='%2300D9A3' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -220,7 +221,143 @@
   .coach-card .body { font-size: 14px; line-height: 1.6; }
 
   .helper { color: var(--muted); font-size: 11px; margin-top: 4px; }
+
+  /* ═══════════════════ WELCOME / OATH SCREEN ═══════════════════ */
+  #welcome {
+    position: fixed; inset: 0; z-index: 500;
+    background: radial-gradient(ellipse at center, #0F1524 0%, #05070C 100%);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+    overflow-y: auto; direction: rtl;
+  }
+  #welcome.show { display: flex; }
+  #welcome.fading { animation: welcomeFade 0.8s forwards; }
+  @keyframes welcomeFade { to { opacity: 0; visibility: hidden; } }
+
+  .welcome-inner { max-width: 640px; width: 100%; text-align: center; }
+  .welcome-logo { display: flex; align-items: center; justify-content: center; gap: 18px;
+    margin-bottom: 32px; }
+  .welcome-logo svg { width: 56px; height: 56px; filter: drop-shadow(0 0 24px rgba(0,217,163,0.45)); }
+  .welcome-logo .name { text-align: right; }
+  .welcome-logo .name .k { font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 4px; color: var(--muted); }
+  .welcome-logo .name .n { font-size: 28px; font-weight: 800; letter-spacing: -0.01em;
+    line-height: 1.1; margin-top: 2px; }
+  .welcome-logo .name .n em { color: var(--bull); font-style: normal; }
+
+  .boot-log {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--dim);
+    text-align: right; direction: rtl; background: rgba(10,14,23,0.7);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 20px 24px; min-height: 220px; margin-bottom: 24px;
+    line-height: 1.8; text-align: left; direction: ltr;
+  }
+  .boot-log .line { opacity: 0; animation: bootIn 0.4s forwards; }
+  .boot-log .line.ok::before  { content: '✓ '; color: var(--bull); font-weight: 700; }
+  .boot-log .line.warn::before{ content: '⚠ '; color: var(--star); font-weight: 700; }
+  .boot-log .line.err::before { content: '✗ '; color: var(--bear); font-weight: 700; }
+  .boot-log .line.hdr { color: var(--bull); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+  .boot-log .line.stat { color: var(--star); }
+  .boot-log .line.pending::before { content: '… '; color: var(--dim); }
+  .boot-log .cursor { display: inline-block; width: 8px; height: 14px; background: var(--bull);
+    animation: blink 1s infinite; vertical-align: middle; margin-left: 4px; }
+  @keyframes bootIn { to { opacity: 1; } }
+  @keyframes blink  { 50% { opacity: 0; } }
+
+  .oath-section { opacity: 0; transform: translateY(20px); transition: all 0.6s; }
+  .oath-section.show { opacity: 1; transform: translateY(0); }
+  .oath-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 4px;
+    color: var(--bull); text-transform: uppercase; margin-bottom: 4px;
+  }
+  .oath-sub {
+    font-size: 14px; color: var(--dim); margin-bottom: 18px;
+  }
+  .oath-item {
+    display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+    background: rgba(0,217,163,0.03); border: 1.5px solid var(--border);
+    border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+    text-align: right; direction: rtl;
+  }
+  .oath-item:hover { border-color: var(--muted); }
+  .oath-item.checked { border-color: var(--bull); background: rgba(0,217,163,0.09); }
+  .oath-item .box {
+    width: 24px; height: 24px; border: 2px solid var(--muted); border-radius: 5px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .oath-item.checked .box { background: var(--bull); border-color: var(--bull); color: var(--bg); }
+  .oath-item.checked .box::before { content: '✓'; font-weight: 900; font-size: 16px; }
+  .oath-item .txt { flex: 1; font-size: 15px; font-weight: 600; }
+  .oath-item .num {
+    font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  #oathEnter {
+    width: 100%; margin-top: 16px; padding: 16px; font-size: 15px; font-weight: 800;
+    background: var(--muted); color: var(--bg); border: none; border-radius: 8px;
+    letter-spacing: 3px; cursor: not-allowed; opacity: 0.5; transition: all 0.3s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  #oathEnter.ready {
+    background: var(--bull); cursor: pointer; opacity: 1;
+    box-shadow: 0 0 32px rgba(0,217,163,0.4);
+    animation: readyPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes readyPulse {
+    0%,100% { box-shadow: 0 0 24px rgba(0,217,163,0.3); }
+    50%     { box-shadow: 0 0 48px rgba(0,217,163,0.6); }
+  }
+
+  .quote-line {
+    margin-top: 24px; font-family: 'Assistant', serif; font-style: italic;
+    font-size: 13px; color: var(--muted); text-align: center; direction: rtl;
+    max-width: 500px; margin-left: auto; margin-right: auto;
+  }
+  .quote-line strong { color: var(--dim); font-style: normal; }
 </style>
+
+<!-- ═════════════════════════ WELCOME · OATH SCREEN ═════════════════════════ -->
+<div id="welcome">
+  <div class="welcome-inner">
+    <div class="welcome-logo">
+      <svg viewBox="0 0 32 32">
+        <path d="M 16 3.5 L 28.5 16 L 16 28.5 L 3.5 16 Z" fill="none" stroke="#00D9A3" stroke-width="2.2"/>
+        <path d="M 10 16 L 14.5 20.5 L 22 12" stroke="#00D9A3" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="name">
+        <div class="k">DISCIPLINE TERMINAL</div>
+        <div class="n">Nehorai · <em>Alpha</em></div>
+      </div>
+    </div>
+
+    <div class="boot-log" id="bootLog"></div>
+
+    <div class="oath-section" id="oathSection">
+      <div class="oath-title">🛡️ שבועת הסוחר · היום</div>
+      <div class="oath-sub">קרא כל שורה בקול, וסמן. זה החוזה שלך עם עצמך להיום.</div>
+
+      <div class="oath-item" data-oath="0" onclick="oathToggle(0)">
+        <div class="box"></div>
+        <div class="txt">אני לא נוקם על הפסד קודם.</div>
+        <div class="num">01</div>
+      </div>
+      <div class="oath-item" data-oath="1" onclick="oathToggle(1)">
+        <div class="box"></div>
+        <div class="txt">אני לא נכנס בתוך הריינג' — Iron Rule.</div>
+        <div class="num">02</div>
+      </div>
+      <div class="oath-item" data-oath="2" onclick="oathToggle(2)">
+        <div class="box"></div>
+        <div class="txt">אני עוצר אחרי 3 עסקאות או $300 הפסד — מה שקודם.</div>
+        <div class="num">03</div>
+      </div>
+
+      <button id="oathEnter" onclick="enterTerminal()">▸ ENTER TERMINAL</button>
+
+      <div class="quote-line" id="quoteLine"></div>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="header-inner">
@@ -1226,7 +1363,117 @@ setInterval(() => {
 // Bot fetch every 60s
 setInterval(() => fetchBotSignals(false), 60000);
 
+// ═══════════════════════════════ WELCOME · OATH ═══════════════════════════════
+
+const OATH_QUOTES = [
+  ['"עקביות היא פונקציה של גישה, לא של אסטרטגיה."', 'מרק דגלס'],
+  ['"הכניסה הכי מסוכנת היא זו שאחרי הפסד."', 'מרק דגלס'],
+  ['"רוב הסוחרים חושבים שהם רוצים כסף. הם רוצים דופמין."', 'אריק סטול'],
+  ['"אתה לא מסחר במניות — אתה מסחר בעצמך."', 'ג\'ק שוואגר'],
+  ['"הטוב באויב של הגדול. הדיסציפלינה מגדילה."', 'משל השוק'],
+  ['"מסחר מלחץ = עסקה גרועה."', 'בריט סטינברגר'],
+  ['"טרייד טוב ≠ טרייד מנצח. טרייד טוב = טרייד לפי הכלל."', 'מייק בלפיורה'],
+  ['"השוק לא בורח. הסבלנות היא עורק החיים."', 'ואן תארפ'],
+];
+
+const oathChecks = [false, false, false];
+let bootDone = false;
+
+function oathKey() { return 'dt_oath_' + todayKey(); }
+
+function shouldShowWelcome() {
+  // Skip if oath already taken today
+  return !LS.get(oathKey(), false);
+}
+
+function typeBoot() {
+  const log = $('bootLog');
+  log.innerHTML = '';
+  // Yesterday's summary
+  const ytKey = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  const yTrades = state.trades.filter(t => t.date === ytKey && t.outcome && t.outcome !== 'OPEN');
+  const yPnl = yTrades.reduce((s,t) => s + (t.pnl_usd||0), 0);
+  const yWin = yTrades.filter(t => t.outcome === 'WIN').length;
+  const yLoss = yTrades.filter(t => t.outcome === 'LOSS').length;
+  const yDisc = yTrades.length > 0 ?
+    Math.round(yTrades.filter(t => t.followed_plan).length / yTrades.length * 100) : null;
+
+  const dow = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][(new Date().getDay()+1)%7];
+  const dateStr = new Date().toLocaleDateString('he-IL');
+  const lines = [
+    { c: 'hdr',  t: '> DISCIPLINE TERMINAL · v1.0' },
+    { c: '',     t: '> Session: ' + dow + ' · ' + dateStr },
+    { c: '',     t: '>' },
+    { c: '',     t: '> Loading trader profile...' },
+    { c: 'ok',   t: '   Trader: Nehorai' },
+    { c: 'ok',   t: '   Strategy: SMC (Asia Range + Deviations)' },
+    { c: '',     t: '>' },
+    { c: '',     t: '> System check:' },
+    { c: 'ok',   t: '   Playbook loaded (' + state.playbook.length + ' setups)' },
+    { c: 'ok',   t: '   Risk cap: $' + state.settings.dailyCap + '/day' },
+    { c: 'ok',   t: '   Max trades: ' + state.settings.maxTrades },
+    { c: 'ok',   t: '   Cooldown: ' + state.settings.coolMin + 'min after ' + state.settings.coolAfter + ' losses' },
+    { c: 'ok',   t: '   Trading windows: 07:00-16:00 · 17:00-21:00' },
+    { c: 'ok',   t: '   Bot feed: connected' },
+    { c: '',     t: '>' },
+  ];
+  if (yTrades.length > 0) {
+    lines.push({ c: 'stat', t: '> Yesterday: ' + yTrades.length + ' trades · ' + yWin + 'W ' + yLoss + 'L · ' + (yPnl>=0?'+':'') + '$' + yPnl.toFixed(0) });
+    if (yDisc !== null) lines.push({ c: 'stat', t: '> Discipline: ' + yDisc + '%' + (yDisc === 100 ? ' ✓' : '') });
+  } else {
+    lines.push({ c: '', t: '> No trades yesterday.' });
+  }
+  lines.push({ c: '', t: '>' });
+  lines.push({ c: 'warn', t: '> OATH REQUIRED before terminal access.' });
+
+  let i = 0;
+  const emit = () => {
+    if (i >= lines.length) {
+      log.innerHTML += '<span class="cursor"></span>';
+      bootDone = true;
+      setTimeout(() => {
+        $('oathSection').classList.add('show');
+        // random quote
+        const q = OATH_QUOTES[Math.floor(Math.random() * OATH_QUOTES.length)];
+        $('quoteLine').innerHTML = q[0] + ' <strong>— ' + q[1] + '</strong>';
+      }, 400);
+      return;
+    }
+    const l = lines[i++];
+    const div = document.createElement('div');
+    div.className = 'line ' + l.c;
+    div.textContent = l.t;
+    log.appendChild(div);
+    setTimeout(emit, 90 + Math.random() * 100);
+  };
+  emit();
+}
+
+function oathToggle(idx) {
+  if (!bootDone) return;
+  oathChecks[idx] = !oathChecks[idx];
+  const el = document.querySelector('[data-oath="'+idx+'"]');
+  el.classList.toggle('checked', oathChecks[idx]);
+  const allChecked = oathChecks.every(x => x);
+  $('oathEnter').classList.toggle('ready', allChecked);
+  $('oathEnter').textContent = allChecked ? '▸ ENTER TERMINAL' : '⬜ סמן את כל השבועות';
+}
+
+function enterTerminal() {
+  if (!oathChecks.every(x => x)) return;
+  LS.set(oathKey(), { at: new Date().toISOString(), checks: oathChecks });
+  $('welcome').classList.add('fading');
+  setTimeout(() => $('welcome').classList.remove('show','fading'), 800);
+}
+
+function maybeShowWelcome() {
+  if (!shouldShowWelcome()) return;
+  $('welcome').classList.add('show');
+  setTimeout(typeBoot, 300);
+}
+
 // First load
 renderAll();
 fetchBotSignals(true);
+maybeShowWelcome();
 </script>
