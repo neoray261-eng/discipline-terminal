@@ -349,7 +349,7 @@
       </div>
       <div class="oath-item" data-oath="2" onclick="oathToggle(2)">
         <div class="box"></div>
-        <div class="txt">אני עוצר אחרי 3 עסקאות או $300 הפסד — מה שקודם.</div>
+        <div class="txt">אני עוצר אחרי 2 עסקאות או $200 הפסד — מה שקודם.</div>
         <div class="num">03</div>
       </div>
 
@@ -499,8 +499,8 @@
   <section class="tab" id="tab-settings">
     <h2 class="section-title">⚙️ חוקי הברזל שלך</h2>
     <div class="card">
-      <div class="form-row"><label>סיכון יומי מקסימלי ($)</label><input type="number" id="s_dailyCap" value="300"></div>
-      <div class="form-row"><label>מקסימום עסקאות/יום</label><input type="number" id="s_maxTrades" value="3"></div>
+      <div class="form-row"><label>סיכון יומי מקסימלי ($)</label><input type="number" id="s_dailyCap" value="200"></div>
+      <div class="form-row"><label>מקסימום עסקאות/יום</label><input type="number" id="s_maxTrades" value="2"></div>
       <div class="form-row"><label>Cooldown אחרי N הפסדים</label><input type="number" id="s_coolAfter" value="2"></div>
       <div class="form-row"><label>Cooldown (דקות)</label><input type="number" id="s_coolMin" value="15"></div>
       <div class="form-row"><label>אחוז Giveback לחיסום</label><input type="number" id="s_giveback" value="30"></div>
@@ -560,7 +560,7 @@ const LS = {
 
 const state = {
   settings: LS.get('dt_settings', {
-    dailyCap: 300, maxTrades: 3, coolAfter: 2, coolMin: 15, giveback: 30, sudsMax: 6,
+    dailyCap: 200, maxTrades: 2, coolAfter: 2, coolMin: 15, giveback: 30, sudsMax: 6,
     signalsUrl: 'https://raw.githubusercontent.com/neoray261-eng/trading-journal-data/main/signals.json',
   }),
   trades:    LS.get('dt_trades', []),
@@ -578,6 +578,19 @@ function save() {
   LS.set('dt_cooldown', state.cooldownUntil);
   LS.set('dt_bot_cache', state.botCache);
 }
+
+// One-time migration for users who signed in with the OLD defaults ($300/3).
+// Only migrates if the values are the exact old defaults — leaves any user
+// customization alone.
+(function migrateSettings() {
+  if (state.settings.dailyCap === 300 && state.settings.maxTrades === 3
+      && !LS.get('dt_settings_migrated_v2', false)) {
+    state.settings.dailyCap = 200;
+    state.settings.maxTrades = 2;
+    LS.set('dt_settings_migrated_v2', true);
+    save();
+  }
+})();
 
 function defaultPlaybook() {
   return [
@@ -1270,8 +1283,8 @@ function renderSettings() {
 }
 function settingsSave() {
   state.settings = {
-    dailyCap: parseFloat($('s_dailyCap').value) || 300,
-    maxTrades: parseInt($('s_maxTrades').value) || 3,
+    dailyCap: parseFloat($('s_dailyCap').value) || 200,
+    maxTrades: parseInt($('s_maxTrades').value) || 2,
     coolAfter: parseInt($('s_coolAfter').value) || 2,
     coolMin: parseInt($('s_coolMin').value) || 15,
     giveback: parseFloat($('s_giveback').value) || 30,
