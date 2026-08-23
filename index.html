@@ -286,16 +286,16 @@
         </select>
       </div>
       <div class="form-row">
-        <label>כניסה</label>
-        <input type="number" step="0.25" id="ent_entry" placeholder="לדוגמה 20845.50">
+        <label>סטופ (נקודות)</label>
+        <input type="number" step="0.25" id="ent_stop_pts" placeholder="כמה נקודות תסכן · לדוגמה 10">
       </div>
       <div class="form-row">
-        <label>סטופ</label>
-        <input type="number" step="0.25" id="ent_stop" placeholder="לדוגמה 20852.00">
+        <label>יעד (נקודות)</label>
+        <input type="number" step="0.25" id="ent_target_pts" placeholder="כמה נקודות תרוויח · לדוגמה 30">
       </div>
       <div class="form-row">
-        <label>יעד</label>
-        <input type="number" step="0.25" id="ent_target" placeholder="לדוגמה 20832.50">
+        <label>כניסה <span style="color:var(--muted);font-size:11px;">(רשות)</span></label>
+        <input type="number" step="0.25" id="ent_entry" placeholder="מחיר כניסה — לרישום ביומן">
       </div>
     </div>
 
@@ -665,15 +665,12 @@ function renderPlaybookPicker() {
 function pickPlaybook(id) { state.entryPlaybookId = id; renderEntry(); }
 
 function renderPosCalc() {
-  const entry = parseFloat($('ent_entry').value) || 0;
-  const stop = parseFloat($('ent_stop').value) || 0;
-  const target = parseFloat($('ent_target').value) || 0;
+  const stopPts = parseFloat($('ent_stop_pts').value) || 0;
+  const targetPts = parseFloat($('ent_target_pts').value) || 0;
   const symbol = $('ent_symbol').value;
   const pb = state.playbook.find(p => p.id === state.entryPlaybookId);
   const riskUsd = pb ? pb.riskTier : 100;
   const pointValue = { MNQ: 2, MES: 5, MGC: 1, NQ: 20, ES: 50, GC: 10 }[symbol] || 2;
-  const stopPts = Math.abs(entry - stop);
-  const targetPts = Math.abs(entry - target);
   const contractsRaw = stopPts > 0 ? riskUsd / (stopPts * pointValue) : 0;
   const contracts = Math.max(0, Math.floor(contractsRaw));
   const actualRisk = contracts * stopPts * pointValue;
@@ -744,22 +741,24 @@ function renderEntrySubmit() {
 function submitEntry() {
   const suds = LS.get('dt_suds_' + todayKey(), 0);
   const pb = state.playbook.find(p => p.id === state.entryPlaybookId);
-  const entry = parseFloat($('ent_entry').value);
-  const stop = parseFloat($('ent_stop').value);
-  const target = parseFloat($('ent_target').value);
+  const stopPts = parseFloat($('ent_stop_pts').value) || 0;
+  const targetPts = parseFloat($('ent_target_pts').value) || 0;
+  const entry = parseFloat($('ent_entry').value) || null;
   const symbol = $('ent_symbol').value;
   const direction = $('ent_direction').value;
   const pointValue = { MNQ:2, MES:5, MGC:1, NQ:20, ES:50, GC:10 }[symbol] || 2;
-  const stopPts = Math.abs(entry - stop);
-  const targetPts = Math.abs(entry - target);
-  const contracts = Math.floor(pb.riskTier / (stopPts * pointValue));
+  const contracts = stopPts > 0 ? Math.floor(pb.riskTier / (stopPts * pointValue)) : 0;
   const rr = stopPts > 0 ? targetPts / stopPts : 0;
+  // Derive implicit stop/target prices for the journal if entry provided.
+  const stopPrice = entry != null ? (direction === 'LONG' ? entry - stopPts : entry + stopPts) : null;
+  const targetPrice = entry != null ? (direction === 'LONG' ? entry + targetPts : entry - targetPts) : null;
   const trade = {
     id: 'm_' + nowMs(), source: 'manual', ts: nowMs(),
     date: todayKey(),
     playbook_id: pb.id, playbook_name: pb.name,
     symbol, direction,
-    entry_price: entry, stop_price: stop, target_price: target,
+    entry_price: entry, stop_price: stopPrice, target_price: targetPrice,
+    stop_pts: stopPts, target_pts: targetPts,
     contracts, rr, risk_usd: pb.riskTier,
     outcome: 'OPEN', pnl_usd: 0,
     entry_suds: suds, exit_suds: null,
@@ -1209,10 +1208,10 @@ function renderAll() {
 document.querySelectorAll('nav.tabs button').forEach(b =>
   b.addEventListener('click', () => showTab(b.dataset.tab)));
 
-['ent_entry','ent_stop','ent_target','ent_symbol','ent_direction'].forEach(id =>
-  document.addEventListener('input', e => {
-    if (e.target.id === id) renderPosCalc();
-  }));
+document.addEventListener('input', e => {
+  if (['ent_stop_pts','ent_target_pts','ent_entry','ent_symbol','ent_direction'].includes(e.target.id))
+    renderPosCalc();
+});
 
 document.addEventListener('input', e => {
   if (['journalFilterSource','journalFilterRange'].includes(e.target.id)) renderJournal();
