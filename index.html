@@ -1,0 +1,1233 @@
+<title>Discipline Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0A0E17; --panel: #121826; --panel-hi: #1A2033;
+    --border: #1F2536; --line: #2B324A;
+    --text: #E4E7EB; --dim: #A0A6B4; --muted: #5B6274;
+    --bull: #00D9A3; --bear: #FF5C7A; --bpr: #B794F6;
+    --star: #FFB454; --info: #4FC3F7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: 'Assistant', -apple-system, sans-serif; direction: rtl; }
+  a { color: var(--info); }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  /* Header + Nav */
+  header { border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #131826, var(--bg));
+    position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 1280px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 3px;
+    color: var(--muted); }
+  .brand h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand h1 span { color: var(--bull); }
+  .status-badges { display: flex; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .badge { padding: 4px 10px; border-radius: 100px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--dim); letter-spacing: 1px; }
+  .badge.ok { color: var(--bull); border-color: rgba(0,217,163,0.4); background: rgba(0,217,163,0.06); }
+  .badge.warn { color: var(--star); border-color: rgba(255,180,84,0.4); background: rgba(255,180,84,0.06); }
+  .badge.bad  { color: var(--bear); border-color: rgba(255,92,122,0.4); background: rgba(255,92,122,0.06); }
+  .badge .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-left: 6px;
+    vertical-align: middle; }
+  .badge.ok .dot { background: var(--bull); box-shadow: 0 0 6px var(--bull); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+
+  nav.tabs { max-width: 1280px; margin: 0 auto; padding: 0 20px; display: flex; gap: 4px;
+    overflow-x: auto; }
+  nav.tabs button { padding: 12px 20px; border: none; background: transparent; color: var(--muted);
+    font-size: 13px; font-weight: 600; border-bottom: 2px solid transparent;
+    letter-spacing: 0.5px; }
+  nav.tabs button:hover { color: var(--text); }
+  nav.tabs button.active { color: var(--bull); border-bottom-color: var(--bull); }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 24px 20px 80px; }
+  section.tab { display: none; }
+  section.tab.active { display: block; }
+
+  h2.section-title { font-size: 14px; font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 3px; color: var(--muted); text-transform: uppercase;
+    margin: 20px 0 12px; display: flex; align-items: center; gap: 12px; }
+  h2.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Cards */
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 20px; margin-bottom: 12px; }
+  .card.hi { background: var(--panel-hi); }
+  .card.ok  { border-color: rgba(0,217,163,0.35); background: rgba(0,217,163,0.05); }
+  .card.warn{ border-color: rgba(255,180,84,0.35); background: rgba(255,180,84,0.05); }
+  .card.bad { border-color: rgba(255,92,122,0.4);  background: rgba(255,92,122,0.06); }
+
+  .grid { display: grid; gap: 12px; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  @media (max-width: 900px) { .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+  .stat { display: flex; flex-direction: column; gap: 4px; }
+  .stat .label { font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .stat .value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600;
+    color: var(--text); }
+  .stat.pos .value { color: var(--bull); }
+  .stat.neg .value { color: var(--bear); }
+  .stat.hi  .value { color: var(--star); }
+  .stat .sub { font-size: 11px; color: var(--dim); }
+
+  /* Big status */
+  .day-status { padding: 22px 24px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+  .day-status .top { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 3px;
+    text-transform: uppercase; margin-bottom: 8px; }
+  .day-status .main { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 4px; }
+  .day-status .sub  { font-size: 13px; opacity: 0.85; }
+  .day-status.trading { background: rgba(0,217,163,0.08); border: 1.5px solid var(--bull); }
+  .day-status.trading .top, .day-status.trading .main { color: var(--bull); }
+  .day-status.waiting { background: rgba(255,180,84,0.08); border: 1.5px solid var(--star); }
+  .day-status.waiting .top, .day-status.waiting .main { color: var(--star); }
+  .day-status.locked  { background: rgba(255,92,122,0.10); border: 1.5px solid var(--bear); }
+  .day-status.locked  .top, .day-status.locked .main { color: var(--bear); }
+
+  /* Forms */
+  .form-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+  .form-row label { min-width: 130px; color: var(--dim); font-size: 13px; }
+  .form-row input, .form-row select, .form-row textarea {
+    flex: 1; padding: 9px 12px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 14px; }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    outline: none; border-color: var(--bull); }
+  textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+  .btn { padding: 10px 20px; background: var(--bull); color: var(--bg); border: none;
+    border-radius: 6px; font-weight: 700; font-size: 14px; letter-spacing: 0.5px; }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { background: var(--muted); color: var(--dim); cursor: not-allowed; opacity: 0.5; }
+  .btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--dim); }
+  .btn.bad { background: var(--bear); color: white; }
+  .btn.small { padding: 6px 12px; font-size: 12px; }
+
+  /* Checklist */
+  .checklist { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .check-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+    user-select: none; }
+  .check-item:hover { background: var(--panel-hi); }
+  .check-item.checked { border-color: var(--bull); background: rgba(0,217,163,0.05); }
+  .check-item .box { width: 20px; height: 20px; border: 2px solid var(--muted); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .check-item.checked .box { background: var(--bull); border-color: var(--bull); color: var(--bg); }
+  .check-item.checked .box::before { content: '✓'; font-weight: 900; font-size: 14px; }
+  .check-item .text { flex: 1; font-size: 14px; }
+  .check-item .why { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Table */
+  table.data { width: 100%; border-collapse: collapse; }
+  table.data th, table.data td { padding: 10px 12px; border-bottom: 1px solid var(--border);
+    text-align: right; font-size: 13px; }
+  table.data th { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1.5px;
+    color: var(--muted); text-transform: uppercase; font-weight: 600; }
+  table.data tbody tr:hover { background: var(--panel-hi); cursor: pointer; }
+  table.data .pos { color: var(--bull); font-weight: 600; }
+  table.data .neg { color: var(--bear); font-weight: 600; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 10px;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; margin: 1px; }
+  .tag.a { background: rgba(0,217,163,0.15); color: var(--bull); }
+  .tag.b { background: rgba(255,180,84,0.15); color: var(--star); }
+  .tag.c { background: rgba(255,92,122,0.15); color: var(--bear); }
+  .tag.bot { background: rgba(183,148,246,0.15); color: var(--bpr); }
+  .tag.manual { background: rgba(79,195,247,0.15); color: var(--info); }
+  .tag.mistake { background: rgba(255,92,122,0.10); color: var(--bear); border: 1px solid rgba(255,92,122,0.3); }
+
+  /* Suds scale */
+  .suds-scale { display: flex; gap: 6px; margin: 12px 0; }
+  .suds-scale button { flex: 1; padding: 12px 0; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--dim); font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 600; }
+  .suds-scale button.selected { border-color: var(--bull); background: rgba(0,217,163,0.1);
+    color: var(--bull); }
+  .suds-scale button:hover:not(.selected) { border-color: var(--dim); color: var(--text); }
+
+  /* Playbook cards */
+  .playbook-card { padding: 14px 18px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; }
+  .playbook-card:hover { border-color: var(--bull); background: var(--panel-hi); }
+  .playbook-card.selected { border-color: var(--bull); background: rgba(0,217,163,0.08); }
+  .playbook-card .name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .playbook-card .criteria { font-size: 12px; color: var(--dim); }
+  .playbook-card .risk-tier { float: left; font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--star); font-weight: 700; }
+
+  /* Chart / bar */
+  .progress { width: 100%; height: 8px; background: var(--panel); border-radius: 4px; overflow: hidden;
+    margin: 8px 0; }
+  .progress-bar { height: 100%; background: var(--bull); transition: width 0.5s; }
+  .progress-bar.warn { background: var(--star); }
+  .progress-bar.bad { background: var(--bear); }
+
+  .hbar { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; }
+  .hbar .lbl { min-width: 80px; color: var(--dim); }
+  .hbar .bar-wrap { flex: 1; background: var(--panel); height: 20px; border-radius: 3px; position: relative; overflow: hidden; }
+  .hbar .bar { height: 100%; background: var(--bull); }
+  .hbar .bar.neg { background: var(--bear); }
+  .hbar .val { min-width: 60px; font-family: 'JetBrains Mono', monospace; text-align: left; }
+
+  /* Cooldown modal */
+  .cooldown-alert { background: rgba(255,92,122,0.10); border: 2px solid var(--bear);
+    border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; text-align: center; }
+  .cooldown-alert .icon { font-size: 32px; margin-bottom: 8px; }
+  .cooldown-alert .title { font-weight: 800; color: var(--bear); font-size: 18px; margin-bottom: 4px; }
+  .cooldown-alert .timer { font-family: 'JetBrains Mono', monospace; font-size: 32px; color: var(--bear);
+    font-weight: 700; margin: 12px 0; }
+
+  /* Small tag/pill */
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; margin: 2px; }
+  .pill.ok { color: var(--bull); border-color: rgba(0,217,163,0.35); }
+  .pill.bad { color: var(--bear); border-color: rgba(255,92,122,0.35); }
+
+  .empty-hint { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 20px; }
+  .empty-hint strong { color: var(--dim); }
+
+  /* Modal */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200;
+    display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { margin: 0 0 16px; font-size: 18px; }
+  .modal .close { float: left; background: transparent; border: none; color: var(--muted);
+    font-size: 24px; cursor: pointer; }
+
+  /* Tag picker */
+  .tag-picker { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .tag-picker .t { padding: 6px 12px; border: 1px solid var(--border); border-radius: 100px;
+    background: var(--panel); color: var(--dim); font-size: 12px; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px; }
+  .tag-picker .t.on { border-color: var(--bear); background: rgba(255,92,122,0.1); color: var(--bear); }
+
+  /* AI coach card */
+  .coach-card { background: linear-gradient(180deg, rgba(183,148,246,0.08), rgba(183,148,246,0));
+    border: 1px solid rgba(183,148,246,0.3); border-radius: 10px; padding: 18px 20px; }
+  .coach-card .h { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px;
+    color: var(--bpr); text-transform: uppercase; margin-bottom: 10px; }
+  .coach-card .body { font-size: 14px; line-height: 1.6; }
+
+  .helper { color: var(--muted); font-size: 11px; margin-top: 4px; }
+</style>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <span class="logo">DISCIPLINE · TERMINAL</span>
+      <h1><span>◤</span> Nehorai · <span>Alpha</span></h1>
+    </div>
+    <div class="status-badges" id="statusBadges"></div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="today" class="active">🎯 היום</button>
+    <button data-tab="entry">🚦 כניסה לעסקה</button>
+    <button data-tab="journal">📔 יומן</button>
+    <button data-tab="analytics">📊 אנליטיקה</button>
+    <button data-tab="playbook">📖 Playbook</button>
+    <button data-tab="settings">⚙️ הגדרות</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ═════════════════════════ TODAY ═════════════════════════ -->
+  <section class="tab active" id="tab-today">
+    <div id="dayStatusHost"></div>
+
+    <div id="cooldownHost"></div>
+
+    <h2 class="section-title">SUDS · צ'ק-אין רגשי (0-10)</h2>
+    <div class="card" id="sudsCard"></div>
+
+    <h2 class="section-title">מצב היום · חי</h2>
+    <div class="grid grid-4" id="todayStats"></div>
+
+    <h2 class="section-title">🤖 בוט · איתותים שנשלחו היום</h2>
+    <div class="card" id="botSignalsToday"></div>
+  </section>
+
+  <!-- ═════════════════════════ ENTRY ═════════════════════════ -->
+  <section class="tab" id="tab-entry">
+    <div id="entryGate"></div>
+
+    <h2 class="section-title">1. בחר Setup מ-Playbook</h2>
+    <div id="playbookPicker"></div>
+
+    <h2 class="section-title">2. פרטי העסקה</h2>
+    <div class="card">
+      <div class="form-row">
+        <label>נכס</label>
+        <select id="ent_symbol">
+          <option value="MNQ">MNQ · Micro NASDAQ</option>
+          <option value="MES">MES · Micro S&P 500</option>
+          <option value="MGC">MGC · Micro Gold</option>
+          <option value="NQ">NQ · NASDAQ</option>
+          <option value="ES">ES · S&P 500</option>
+          <option value="GC">GC · Gold</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>כיוון</label>
+        <select id="ent_direction">
+          <option value="LONG">LONG · קנייה</option>
+          <option value="SHORT">SHORT · מכירה</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>כניסה</label>
+        <input type="number" step="0.25" id="ent_entry" placeholder="לדוגמה 20845.50">
+      </div>
+      <div class="form-row">
+        <label>סטופ</label>
+        <input type="number" step="0.25" id="ent_stop" placeholder="לדוגמה 20852.00">
+      </div>
+      <div class="form-row">
+        <label>יעד</label>
+        <input type="number" step="0.25" id="ent_target" placeholder="לדוגמה 20832.50">
+      </div>
+    </div>
+
+    <h2 class="section-title">3. מחשבון פוזיציה</h2>
+    <div class="card" id="posCalc"></div>
+
+    <h2 class="section-title">4. Checklist · חובה לסמן הכל</h2>
+    <div class="checklist" id="entryChecklist"></div>
+
+    <h2 class="section-title">5. שער כניסה</h2>
+    <div id="entrySubmit"></div>
+  </section>
+
+  <!-- ═════════════════════════ JOURNAL ═════════════════════════ -->
+  <section class="tab" id="tab-journal">
+    <h2 class="section-title">🔎 סינון</h2>
+    <div class="card">
+      <div class="form-row">
+        <label>מקור</label>
+        <select id="journalFilterSource">
+          <option value="all">הכל</option>
+          <option value="manual">רק ידני</option>
+          <option value="bot">רק בוט</option>
+        </select>
+        <label style="min-width:80px;">טווח</label>
+        <select id="journalFilterRange">
+          <option value="today">היום</option>
+          <option value="week">שבוע</option>
+          <option value="month">חודש</option>
+          <option value="all">הכל</option>
+        </select>
+      </div>
+    </div>
+    <div id="journalTable"></div>
+  </section>
+
+  <!-- ═════════════════════════ ANALYTICS ═════════════════════════ -->
+  <section class="tab" id="tab-analytics">
+    <h2 class="section-title">📈 סיכום השבוע</h2>
+    <div class="grid grid-4" id="weeklyStats"></div>
+
+    <h2 class="section-title">🎯 Discipline Score</h2>
+    <div class="card" id="disciplineCard"></div>
+
+    <h2 class="section-title">🧠 תובנות אוטומטיות</h2>
+    <div id="insights"></div>
+
+    <h2 class="section-title">⏰ Win Rate לפי שעה</h2>
+    <div class="card" id="byHour"></div>
+
+    <h2 class="section-title">🎓 Van Tharp SQN</h2>
+    <div class="card" id="sqnCard"></div>
+  </section>
+
+  <!-- ═════════════════════════ PLAYBOOK ═════════════════════════ -->
+  <section class="tab" id="tab-playbook">
+    <h2 class="section-title">📖 Setups מוגדרים</h2>
+    <div id="playbookList"></div>
+    <button class="btn ghost small" onclick="pbAdd()" style="margin-top:16px;">+ הוסף Setup</button>
+  </section>
+
+  <!-- ═════════════════════════ SETTINGS ═════════════════════════ -->
+  <section class="tab" id="tab-settings">
+    <h2 class="section-title">⚙️ חוקי הברזל שלך</h2>
+    <div class="card">
+      <div class="form-row"><label>סיכון יומי מקסימלי ($)</label><input type="number" id="s_dailyCap" value="300"></div>
+      <div class="form-row"><label>מקסימום עסקאות/יום</label><input type="number" id="s_maxTrades" value="3"></div>
+      <div class="form-row"><label>Cooldown אחרי N הפסדים</label><input type="number" id="s_coolAfter" value="2"></div>
+      <div class="form-row"><label>Cooldown (דקות)</label><input type="number" id="s_coolMin" value="15"></div>
+      <div class="form-row"><label>אחוז Giveback לחיסום</label><input type="number" id="s_giveback" value="30"></div>
+      <div class="form-row"><label>SUDS מקסימלי לפעולה</label><input type="number" id="s_sudsMax" value="6"></div>
+      <button class="btn" onclick="settingsSave()">💾 שמור</button>
+    </div>
+
+    <h2 class="section-title">📡 חיבור לבוט (GitHub)</h2>
+    <div class="card">
+      <div class="form-row">
+        <label>URL של signals.json</label>
+        <input type="text" id="s_signalsUrl"
+               value="https://raw.githubusercontent.com/neoray261-eng/trading-journal-data/main/signals.json">
+      </div>
+      <div class="helper">הכתובת הציבורית של קובץ ה-signals.json ב-GitHub. הטרמינל קורא אותו כל 60 שניות.</div>
+      <button class="btn ghost small" onclick="fetchBotSignals(true)" style="margin-top:8px;">🔄 רענן עכשיו</button>
+      <div id="botFetchStatus" class="helper" style="margin-top:8px;"></div>
+    </div>
+
+    <h2 class="section-title">📤 גיבוי / שחזור</h2>
+    <div class="card">
+      <button class="btn ghost small" onclick="exportAll()">📥 גיבוי (JSON)</button>
+      <button class="btn ghost small" onclick="document.getElementById('imp').click()">📤 שחזור מ-JSON</button>
+      <input type="file" id="imp" style="display:none;" onchange="importAll(event)">
+      <button class="btn bad small" onclick="if(confirm('בטוח? זה מוחק הכל.')) resetAll()" style="margin-right:12px;">🗑️ מחיקה מוחלטת</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- Post-Trade Review Modal -->
+<div class="modal-bg" id="reviewModal">
+  <div class="modal">
+    <button class="close" onclick="closeReview()">×</button>
+    <h3>📝 סקירה אחרי עסקה</h3>
+    <div id="reviewContent"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════ STATE ═══════════════════════════════
+
+const LS = {
+  get(k, def) { try { const v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); } catch { return def; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
+  del(k) { localStorage.removeItem(k); },
+};
+
+const state = {
+  settings: LS.get('dt_settings', {
+    dailyCap: 300, maxTrades: 3, coolAfter: 2, coolMin: 15, giveback: 30, sudsMax: 6,
+    signalsUrl: 'https://raw.githubusercontent.com/neoray261-eng/trading-journal-data/main/signals.json',
+  }),
+  trades:    LS.get('dt_trades', []),
+  playbook:  LS.get('dt_playbook', defaultPlaybook()),
+  botCache:  LS.get('dt_bot_cache', { fetchedAt: 0, data: [] }),
+  cooldownUntil: LS.get('dt_cooldown', 0),
+  entryPlaybookId: null,
+  entryChecks: {},
+};
+
+function save() {
+  LS.set('dt_settings', state.settings);
+  LS.set('dt_trades',   state.trades);
+  LS.set('dt_playbook', state.playbook);
+  LS.set('dt_cooldown', state.cooldownUntil);
+  LS.set('dt_bot_cache', state.botCache);
+}
+
+function defaultPlaybook() {
+  return [
+    { id: 'poi_fvg', name: 'POI + FVG (בסיס)', riskTier: 100,
+      criteria: 'אזור סטייה עם FVG חוקי (5-50 נק\', לא נאכל). כניסה על retest + failure.' },
+    { id: 'poi_prev', name: 'POI + FVG + Previous', riskTier: 120,
+      criteria: 'הבסיס + חיזוק של PDH/PDL/PWH/PWL. סבירות גבוהה יותר לתגובה.' },
+    { id: 'poi_ifvg', name: 'POI + FVG + IFVG', riskTier: 120,
+      criteria: 'הבסיס + IFVG על 1m/2m/3m/5m בכיוון ההפוך לתנועה.' },
+    { id: 'poi_smt', name: 'POI + FVG + SMT ⭐', riskTier: 150,
+      criteria: 'הבסיס + SMT NQ↔ES / Gold↔Silver על 5m+. Setup החזק ביותר.' },
+    { id: 'smt_solo', name: 'SMT Standalone (Path B)', riskTier: 50,
+      criteria: 'SMT בלי POI. Max 2/יום. IFVG חובה. סיכון מופחת.' },
+    { id: 'bpr_disp', name: 'BPR + Displacement', riskTier: 100,
+      criteria: 'BPR (חפיפת bull+bear FVG) עם displacement candle לכיוון.' },
+  ];
+}
+
+// ═══════════════════════════════ UTILS ═══════════════════════════════
+
+const $ = id => document.getElementById(id);
+const fmt = n => (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString('en', {maximumFractionDigits: 2});
+const fmt$ = n => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en', {maximumFractionDigits: 0});
+const todayKey = () => new Date().toISOString().slice(0,10);
+const nowMs = () => Date.now();
+
+function isInTradingWindow(d = new Date()) {
+  const wd = d.getDay(); // 0=Sun
+  if (wd === 5 || wd === 6) return false;   // Fri/Sat (US market context)
+  const m = d.getHours() * 60 + d.getMinutes();
+  // 07:00-16:00 and 17:00-21:00 IL
+  return (m >= 420 && m <= 960) || (m >= 1020 && m <= 1260);
+}
+
+function nextWindowLabel(d = new Date()) {
+  const m = d.getHours()*60 + d.getMinutes();
+  if (m < 420)  return `פתיחה: 07:00 (בעוד ${Math.floor((420-m)/60)}:${String((420-m)%60).padStart(2,'0')})`;
+  if (m > 960 && m < 1020) return `הפסקה עד 17:00 (בעוד ${Math.floor((1020-m)/60)}:${String((1020-m)%60).padStart(2,'0')})`;
+  if (m > 1260) return 'סגור להיום';
+  return 'פעיל עכשיו';
+}
+
+function todayTrades() {
+  return state.trades.filter(t => t.date === todayKey());
+}
+function todayLossStreak() {
+  const t = todayTrades().filter(x => x.outcome && x.outcome !== 'OPEN');
+  let streak = 0;
+  for (let i = t.length - 1; i >= 0; i--) {
+    if (t[i].outcome === 'LOSS') streak++;
+    else break;
+  }
+  return streak;
+}
+function todayNetPnl() {
+  return todayTrades().reduce((s, t) => s + (t.pnl_usd || 0), 0);
+}
+function todayPeakPnl() {
+  const trades = todayTrades().sort((a,b) => a.ts - b.ts);
+  let cum = 0, peak = 0;
+  for (const t of trades) { cum += (t.pnl_usd || 0); if (cum > peak) peak = cum; }
+  return peak;
+}
+
+function dayStatus() {
+  const suds = LS.get('dt_suds_' + todayKey(), null);
+  if (state.cooldownUntil > nowMs()) return { kind: 'locked', label: 'COOLDOWN פעיל', sub: 'המערכת נעולה — קח נשימה' };
+  const net = todayNetPnl();
+  if (net <= -state.settings.dailyCap) return { kind: 'locked', label: `הגעת ל-$${state.settings.dailyCap} הפסד יומי`, sub: 'סיימת להיום. נתראה מחר.' };
+  if (todayTrades().length >= state.settings.maxTrades) return { kind: 'locked', label: `${state.settings.maxTrades} עסקאות נסגרו`, sub: 'סיימת את המכסה היומית.' };
+  const peak = todayPeakPnl();
+  if (peak > 100 && (peak - net) > peak * (state.settings.giveback/100)) {
+    return { kind: 'locked', label: `Giveback ${state.settings.giveback}% הופעל`, sub: `שיא היום $${peak.toFixed(0)}, עכשיו $${net.toFixed(0)}` };
+  }
+  if (suds !== null && suds >= state.settings.sudsMax) return { kind: 'locked', label: `SUDS גבוה (${suds})`, sub: 'המצב הרגשי לא מתאים למסחר היום.' };
+  if (suds === null) return { kind: 'waiting', label: 'מלא SUDS לפני מסחר', sub: 'צ\'ק-אין רגשי חובה בבוקר.' };
+  if (!isInTradingWindow()) return { kind: 'waiting', label: 'מחוץ לחלון מסחר', sub: nextWindowLabel() };
+  return { kind: 'trading', label: 'אתה מורשה לפעול 🎯', sub: `SUDS ${suds} · נותרו ${state.settings.maxTrades - todayTrades().length} עסקאות · P&L היום ${fmt$(net)}` };
+}
+
+// ═══════════════════════════════ RENDER ═══════════════════════════════
+
+function renderHeader() {
+  const st = dayStatus();
+  const inWin = isInTradingWindow();
+  $('statusBadges').innerHTML = `
+    <span class="badge ${inWin?'ok':'warn'}"><span class="dot"></span>${inWin?'חלון פתוח':'חלון סגור'}</span>
+    <span class="badge ${st.kind==='trading'?'ok':st.kind==='waiting'?'warn':'bad'}">${st.kind==='trading'?'✓ מותר':st.kind==='waiting'?'⏳ המתן':'🛑 נעול'}</span>
+  `;
+}
+
+function renderToday() {
+  const st = dayStatus();
+  $('dayStatusHost').innerHTML = `
+    <div class="day-status ${st.kind}">
+      <div class="top">${st.kind === 'trading' ? '✅ TRADING PERMITTED' : st.kind === 'waiting' ? '⏳ WAITING' : '🛑 LOCKED'}</div>
+      <div class="main">${st.label}</div>
+      <div class="sub">${st.sub}</div>
+    </div>`;
+
+  if (state.cooldownUntil > nowMs()) {
+    const rem = Math.max(0, state.cooldownUntil - nowMs());
+    const mm = Math.floor(rem / 60000);
+    const ss = Math.floor((rem % 60000) / 1000);
+    $('cooldownHost').innerHTML = `
+      <div class="cooldown-alert">
+        <div class="icon">🧘</div>
+        <div class="title">COOLDOWN אחרי ${state.settings.coolAfter} הפסדים ברצף</div>
+        <div class="timer">${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}</div>
+        <div style="font-size:13px;color:var(--dim);margin-top:8px;">
+          זה לא עונש — זו הגנה. השוק לא בורח. תנשום, תשתה מים.<br>
+          <em>"הכניסה הבאה אחרי הפסד היא הכי מסוכנת."</em> — מרק דגלס
+        </div>
+      </div>`;
+  } else $('cooldownHost').innerHTML = '';
+
+  renderSudsCard();
+  renderTodayStats();
+  renderBotSignalsToday();
+}
+
+function renderSudsCard() {
+  const key = 'dt_suds_' + todayKey();
+  const suds = LS.get(key, null);
+  const btns = Array.from({length:11}, (_,i) =>
+    `<button data-v="${i}" class="${suds===i?'selected':''}" onclick="setSuds(${i})">${i}</button>`).join('');
+  const desc = suds === null ? 'עדיין לא סימנת. חובה לסמן לפני עסקה ראשונה.'
+             : suds >= state.settings.sudsMax ? `⛔ SUDS ${suds} — היום לא יום מסחר. תנוח.`
+             : `✓ SUDS ${suds} · אתה במצב טוב. בהצלחה.`;
+  $('sudsCard').innerHTML = `
+    <div style="color:var(--dim);font-size:13px;margin-bottom:4px;">
+      איך אתה מרגיש הבוקר? (0 = רגוע לגמרי, 10 = מתוח / כועס / עייף מאוד)
+    </div>
+    <div class="suds-scale">${btns}</div>
+    <div style="font-size:13px;color:${suds!==null && suds>=state.settings.sudsMax?'var(--bear)':suds!==null?'var(--bull)':'var(--muted)'};margin-top:8px;">${desc}</div>
+  `;
+}
+
+function setSuds(v) {
+  LS.set('dt_suds_' + todayKey(), v);
+  renderAll();
+}
+
+function renderTodayStats() {
+  const trades = todayTrades();
+  const wins = trades.filter(t => t.outcome === 'WIN').length;
+  const losses = trades.filter(t => t.outcome === 'LOSS').length;
+  const net = todayNetPnl();
+  const streak = todayLossStreak();
+  const peak = todayPeakPnl();
+  const giveback = peak > 0 ? Math.round((peak - net) / peak * 100) : 0;
+  $('todayStats').innerHTML = `
+    <div class="card"><div class="stat"><span class="label">עסקאות</span>
+      <span class="value">${trades.length}<span class="sub"> / ${state.settings.maxTrades}</span></span>
+      <span class="sub">${wins} זכיות · ${losses} הפסדים</span></div></div>
+    <div class="card"><div class="stat ${net>0?'pos':net<0?'neg':''}"><span class="label">P&L היום</span>
+      <span class="value">${fmt$(net)}</span>
+      <span class="sub">שיא: ${fmt$(peak)}</span></div></div>
+    <div class="card"><div class="stat ${streak>=2?'neg':''}"><span class="label">רצף הפסדים</span>
+      <span class="value">${streak}</span>
+      <span class="sub">${streak>=state.settings.coolAfter?'⛔ יגרור Cooldown':'תקין'}</span></div></div>
+    <div class="card"><div class="stat ${giveback>state.settings.giveback?'neg':''}"><span class="label">Giveback</span>
+      <span class="value">${peak>0?giveback+'%':'—'}</span>
+      <span class="sub">סף: ${state.settings.giveback}%</span></div></div>
+  `;
+}
+
+function renderBotSignalsToday() {
+  const bot = (state.botCache.data || []).filter(s => {
+    const d = new Date(s.subject || s.ts || s.time || 0);
+    return d.toISOString().slice(0,10) === todayKey();
+  });
+  if (bot.length === 0) {
+    $('botSignalsToday').innerHTML = `<div class="empty-hint">אין איתותים מהבוט היום עדיין.<br><strong>הבוט על Railway 24/7 · יופיע כאן ברגע שיזוהה setup.</strong></div>`;
+    return;
+  }
+  const rows = bot.slice(-10).reverse().map(s => `
+    <tr>
+      <td class="mono">${(s.subject||'').slice(11,16) || '—'}</td>
+      <td><span class="tag bot">${s.bot || 'BOT'}</span></td>
+      <td>${s.symbol || '—'}</td>
+      <td class="${s.direction==='LONG'?'pos':'neg'}">${s.direction || ''}</td>
+      <td class="mono">${fmt(s.entry_price)}</td>
+      <td class="mono">${fmt(s.rr)}</td>
+      <td class="${(s.pnl_usd||0)>0?'pos':(s.pnl_usd||0)<0?'neg':''}">${s.pnl_usd!=null ? fmt$(s.pnl_usd) : s.outcome || 'OPEN'}</td>
+    </tr>`).join('');
+  $('botSignalsToday').innerHTML = `
+    <table class="data">
+      <thead><tr><th>שעה</th><th>בוט</th><th>נכס</th><th>כיוון</th><th>מחיר</th><th>R:R</th><th>תוצאה</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="helper" style="margin-top:8px;">
+      מעודכן: ${new Date(state.botCache.fetchedAt).toLocaleTimeString('he-IL')} · ${bot.length} איתותים היום
+    </div>
+  `;
+}
+
+// ═══════════════════════════════ ENTRY TAB ═══════════════════════════════
+
+function renderEntry() {
+  const st = dayStatus();
+  if (st.kind === 'locked') {
+    $('entryGate').innerHTML = `
+      <div class="cooldown-alert">
+        <div class="icon">🛑</div>
+        <div class="title">כניסה חסומה</div>
+        <div style="color:var(--text);font-size:14px;margin-top:8px;">${st.label}<br><small style="color:var(--dim);">${st.sub}</small></div>
+      </div>`;
+  } else if (st.kind === 'waiting') {
+    $('entryGate').innerHTML = `
+      <div class="cooldown-alert" style="background:rgba(255,180,84,0.08);border-color:var(--star);">
+        <div class="icon">⏳</div>
+        <div class="title" style="color:var(--star);">${st.label}</div>
+        <div style="color:var(--dim);font-size:13px;margin-top:8px;">${st.sub}</div>
+      </div>`;
+  } else $('entryGate').innerHTML = '';
+
+  renderPlaybookPicker();
+  renderPosCalc();
+  renderEntryChecklist();
+  renderEntrySubmit();
+}
+
+function renderPlaybookPicker() {
+  $('playbookPicker').innerHTML = state.playbook.map(p => `
+    <div class="playbook-card ${state.entryPlaybookId===p.id?'selected':''}" onclick="pickPlaybook('${p.id}')">
+      <div class="risk-tier">$${p.riskTier}</div>
+      <div class="name">${p.name}</div>
+      <div class="criteria">${p.criteria}</div>
+    </div>`).join('');
+}
+function pickPlaybook(id) { state.entryPlaybookId = id; renderEntry(); }
+
+function renderPosCalc() {
+  const entry = parseFloat($('ent_entry').value) || 0;
+  const stop = parseFloat($('ent_stop').value) || 0;
+  const target = parseFloat($('ent_target').value) || 0;
+  const symbol = $('ent_symbol').value;
+  const pb = state.playbook.find(p => p.id === state.entryPlaybookId);
+  const riskUsd = pb ? pb.riskTier : 100;
+  const pointValue = { MNQ: 2, MES: 5, MGC: 1, NQ: 20, ES: 50, GC: 10 }[symbol] || 2;
+  const stopPts = Math.abs(entry - stop);
+  const targetPts = Math.abs(entry - target);
+  const contractsRaw = stopPts > 0 ? riskUsd / (stopPts * pointValue) : 0;
+  const contracts = Math.max(0, Math.floor(contractsRaw));
+  const actualRisk = contracts * stopPts * pointValue;
+  const potentialWin = contracts * targetPts * pointValue;
+  const rr = stopPts > 0 && targetPts > 0 ? targetPts / stopPts : 0;
+  $('posCalc').innerHTML = `
+    <div class="grid grid-4">
+      <div class="stat"><span class="label">Setup</span><span class="value" style="font-size:14px;">${pb?pb.name:'לא נבחר'}</span></div>
+      <div class="stat"><span class="label">Stop / Target</span><span class="value">${fmt(stopPts)} / ${fmt(targetPts)}</span><span class="sub">נק'</span></div>
+      <div class="stat ${contracts>0?'pos':'neg'}"><span class="label">חוזים</span><span class="value">${contracts}</span><span class="sub">מקס לפי $${riskUsd}</span></div>
+      <div class="stat ${rr>=2?'pos':'neg'}"><span class="label">R:R</span><span class="value">1:${fmt(rr)}</span><span class="sub">מינימום 1:2</span></div>
+    </div>
+    <div class="grid grid-2" style="margin-top:10px;">
+      <div class="card hi"><div class="stat"><span class="label">סיכון בפועל</span><span class="value neg">${fmt$(-actualRisk)}</span></div></div>
+      <div class="card hi"><div class="stat"><span class="label">רווח אם יעד</span><span class="value pos">${fmt$(potentialWin)}</span></div></div>
+    </div>
+  `;
+}
+
+const entryChecklistItems = [
+  { id: 'pb',        text: 'בחרתי Setup מ-Playbook',        why: 'אין setup ברשימה = אין עסקה.' },
+  { id: 'suds',      text: 'סימנתי SUDS היום ואני מתחת לסף', why: 'מצב רגשי מוכח = כניסה נקייה.' },
+  { id: 'iron',      text: 'המחיר מחוץ לריינג\' אסיה',       why: 'Iron Rule — אסור להיכנס בתוך.' },
+  { id: 'window',    text: 'אני בחלון מסחר תקין',            why: '07:00-16:00 או 17:00-21:00.' },
+  { id: 'rr',        text: 'R:R לפחות 1:2',                  why: 'סיכון/סיכוי נכון = expectancy חיובי.' },
+  { id: 'news',      text: 'אין חדשות High-Impact ב-30 דק\'',  why: 'להימנע מתנועות פאניקה.' },
+  { id: 'no_revenge',text: '⚠️ אני לא נוקם על ההפסד הקודם',    why: 'האויב הכי גדול של סוחר.' },
+  { id: 'calm',      text: '🫁 אני נושם רגוע ולא בלחץ',        why: 'מסחר מלחץ = עסקה גרועה.' },
+];
+
+function renderEntryChecklist() {
+  $('entryChecklist').innerHTML = entryChecklistItems.map(it => `
+    <div class="check-item ${state.entryChecks[it.id]?'checked':''}" onclick="toggleCheck('${it.id}')">
+      <div class="box"></div>
+      <div>
+        <div class="text">${it.text}</div>
+        <div class="why">${it.why}</div>
+      </div>
+    </div>`).join('');
+}
+function toggleCheck(id) {
+  state.entryChecks[id] = !state.entryChecks[id];
+  renderEntryChecklist();
+  renderEntrySubmit();
+}
+
+function renderEntrySubmit() {
+  const allChecked = entryChecklistItems.every(it => state.entryChecks[it.id]);
+  const hasPb = !!state.entryPlaybookId;
+  const st = dayStatus();
+  const canSubmit = allChecked && hasPb && st.kind === 'trading';
+  const reasons = [];
+  if (!hasPb) reasons.push('בחר Setup מ-Playbook');
+  if (!allChecked) reasons.push('סמן את כל הצ\'קליסט');
+  if (st.kind !== 'trading') reasons.push(st.label);
+  $('entrySubmit').innerHTML = `
+    <div class="card">
+      <button class="btn" ${canSubmit?'':'disabled'} onclick="submitEntry()">
+        ${canSubmit ? '🚀 רשום כניסה ליומן' : '❌ ' + reasons.join(' · ')}
+      </button>
+      <div class="helper" style="margin-top:8px;">
+        ${canSubmit ? '✓ כל התנאים תקינים. הוסף את העסקה ליומן ותעקוב.' :
+          'המערכת חוסמת אותך למען הטוב שלך. כל תנאי נבנה מהשיטה שלך + מהמקצוענים.'}
+      </div>
+    </div>`;
+}
+
+function submitEntry() {
+  const suds = LS.get('dt_suds_' + todayKey(), 0);
+  const pb = state.playbook.find(p => p.id === state.entryPlaybookId);
+  const entry = parseFloat($('ent_entry').value);
+  const stop = parseFloat($('ent_stop').value);
+  const target = parseFloat($('ent_target').value);
+  const symbol = $('ent_symbol').value;
+  const direction = $('ent_direction').value;
+  const pointValue = { MNQ:2, MES:5, MGC:1, NQ:20, ES:50, GC:10 }[symbol] || 2;
+  const stopPts = Math.abs(entry - stop);
+  const targetPts = Math.abs(entry - target);
+  const contracts = Math.floor(pb.riskTier / (stopPts * pointValue));
+  const rr = stopPts > 0 ? targetPts / stopPts : 0;
+  const trade = {
+    id: 'm_' + nowMs(), source: 'manual', ts: nowMs(),
+    date: todayKey(),
+    playbook_id: pb.id, playbook_name: pb.name,
+    symbol, direction,
+    entry_price: entry, stop_price: stop, target_price: target,
+    contracts, rr, risk_usd: pb.riskTier,
+    outcome: 'OPEN', pnl_usd: 0,
+    entry_suds: suds, exit_suds: null,
+    execution_grade: null, mistake_tags: [], review_notes: '',
+    followed_plan: null,
+  };
+  state.trades.push(trade);
+  state.entryChecks = {};
+  state.entryPlaybookId = null;
+  save();
+  showTab('journal');
+  renderAll();
+  alert('✓ העסקה נרשמה ליומן. כשתסגור אותה תוכל למלא סקירה.');
+}
+
+// ═══════════════════════════════ JOURNAL TAB ═══════════════════════════════
+
+function renderJournal() {
+  const src = $('journalFilterSource').value;
+  const rng = $('journalFilterRange').value;
+  let trades = [...state.trades];
+  const bot = (state.botCache.data || []).map(s => ({
+    id: 'bot_' + (s.subject || s.ts),
+    source: 'bot',
+    ts: new Date(s.subject || 0).getTime(),
+    date: (s.subject || '').slice(0,10),
+    playbook_name: s.bot || 'BOT',
+    symbol: s.symbol, direction: s.direction,
+    entry_price: s.entry_price, stop_price: s.stop_price,
+    contracts: s.contracts, rr: s.rr, risk_usd: s.risk_usd,
+    outcome: s.outcome, pnl_usd: s.pnl_usd,
+  }));
+  if (src === 'all' || src === 'bot') trades = trades.concat(bot);
+  if (src === 'bot') trades = trades.filter(t => t.source === 'bot');
+  if (src === 'manual') trades = trades.filter(t => t.source === 'manual');
+
+  const now = new Date();
+  if (rng === 'today') trades = trades.filter(t => t.date === todayKey());
+  else if (rng === 'week') {
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
+    trades = trades.filter(t => new Date(t.date) >= cutoff);
+  } else if (rng === 'month') {
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 30);
+    trades = trades.filter(t => new Date(t.date) >= cutoff);
+  }
+  trades.sort((a,b) => b.ts - a.ts);
+
+  if (trades.length === 0) {
+    $('journalTable').innerHTML = `<div class="empty-hint">אין עסקאות בטווח הזה עדיין.</div>`;
+    return;
+  }
+  const rows = trades.map(t => {
+    const isOpen = t.outcome === 'OPEN' || t.outcome == null;
+    return `
+    <tr onclick="openReview('${t.id}')">
+      <td class="mono">${(t.date||'').slice(5)}</td>
+      <td><span class="tag ${t.source==='bot'?'bot':'manual'}">${t.source==='bot'?'BOT':'IDNI'}</span></td>
+      <td>${t.symbol||''}</td>
+      <td class="${t.direction==='LONG'?'pos':'neg'}">${t.direction||''}</td>
+      <td class="mono">${fmt(t.entry_price)}</td>
+      <td class="mono">${fmt(t.rr)}</td>
+      <td class="${(t.pnl_usd||0)>0?'pos':(t.pnl_usd||0)<0?'neg':''}">${isOpen?'—':fmt$(t.pnl_usd)}</td>
+      <td>${isOpen?'<span class="tag b">OPEN</span>':t.outcome==='WIN'?'<span class="tag a">WIN</span>':'<span class="tag c">LOSS</span>'}</td>
+      <td>${t.execution_grade?`<span class="tag ${t.execution_grade.toLowerCase()}">${t.execution_grade}</span>`:'—'}</td>
+    </tr>`;
+  }).join('');
+  $('journalTable').innerHTML = `
+    <table class="data">
+      <thead><tr>
+        <th>תאריך</th><th>מקור</th><th>נכס</th><th>כיוון</th><th>כניסה</th><th>R:R</th><th>P&L</th><th>תוצאה</th><th>ציון</th>
+      </tr></thead><tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ═══════════════════════════════ REVIEW MODAL ═══════════════════════════════
+
+const MISTAKE_TAGS = [
+  'revenge', 'chased-entry', 'no-setup', 'moved-stop',
+  'size-too-big', 'held-past-invalidation', 'exit-too-early',
+  'exit-too-late', 'ignored-news', 'overtrade', 'inside-range', 'outside-window',
+];
+
+let reviewTradeId = null;
+function openReview(id) {
+  reviewTradeId = id;
+  const trade = state.trades.find(t => t.id === id) ||
+                (state.botCache.data||[]).find(s => 'bot_' + (s.subject||s.ts) === id);
+  if (!trade || trade.source === 'bot') {
+    alert('עסקת בוט — לא ניתן לערוך ידנית.');
+    return;
+  }
+  const t = state.trades.find(x => x.id === id);
+  const isOpen = t.outcome === 'OPEN';
+  $('reviewContent').innerHTML = `
+    <div class="stat" style="margin-bottom:16px;">
+      <span class="label">${t.playbook_name} · ${t.symbol} · ${t.direction}</span>
+      <span class="value" style="font-size:16px;">${fmt(t.entry_price)} → SL ${fmt(t.stop_price)} · TP ${fmt(t.target_price)}</span>
+    </div>
+    ${isOpen ? `
+    <h4 style="margin:16px 0 8px;">סגור את העסקה:</h4>
+    <div class="form-row">
+      <label>תוצאה</label>
+      <select id="r_outcome">
+        <option value="WIN">WIN · הגיע ליעד</option>
+        <option value="LOSS">LOSS · נפגע בסטופ</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>P&L בפועל ($)</label>
+      <input type="number" id="r_pnl" step="0.01">
+    </div>
+    ` : ''}
+    <h4 style="margin:16px 0 8px;">📝 סקירה:</h4>
+    <div class="form-row">
+      <label>ציון ביצוע</label>
+      <select id="r_grade">
+        <option value="A">A · Textbook</option>
+        <option value="B">B · טוב אבל לא מושלם</option>
+        <option value="C">C · כניסה חלשה / שברתי כלל</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>עקבתי אחרי התוכנית?</label>
+      <select id="r_plan">
+        <option value="1">כן, 100%</option>
+        <option value="0">לא</option>
+      </select>
+    </div>
+    <div>
+      <label style="color:var(--dim);font-size:13px;">טעויות (סמן כמה שרלוונטי):</label>
+      <div class="tag-picker" id="r_tags">
+        ${MISTAKE_TAGS.map(tag => `<span class="t" data-tag="${tag}" onclick="this.classList.toggle('on')">${tag}</span>`).join('')}
+      </div>
+    </div>
+    <div class="form-row">
+      <label>מה למדתי?</label>
+      <textarea id="r_notes" placeholder="שיעור אחד במשפט..."></textarea>
+    </div>
+    <div class="form-row">
+      <label>SUDS ביציאה</label>
+      <input type="number" id="r_exit_suds" min="0" max="10" placeholder="0-10">
+    </div>
+    <button class="btn" onclick="saveReview()" style="width:100%;margin-top:12px;">💾 שמור סקירה</button>
+    <button class="btn ghost small" onclick="deleteTrade('${t.id}')" style="width:100%;margin-top:8px;">🗑️ מחק עסקה</button>
+  `;
+  $('reviewModal').classList.add('open');
+}
+function closeReview() {
+  $('reviewModal').classList.remove('open');
+  reviewTradeId = null;
+}
+function saveReview() {
+  const t = state.trades.find(x => x.id === reviewTradeId);
+  if (!t) return;
+  if (t.outcome === 'OPEN') {
+    t.outcome = $('r_outcome').value;
+    t.pnl_usd = parseFloat($('r_pnl').value) || 0;
+    // Trigger cooldown if losing streak reached
+    if (t.outcome === 'LOSS') {
+      const streak = todayLossStreak() + 1;   // +1 because we just closed it
+      if (streak >= state.settings.coolAfter) {
+        state.cooldownUntil = nowMs() + state.settings.coolMin * 60000;
+      }
+    }
+  }
+  t.execution_grade = $('r_grade').value;
+  t.followed_plan = $('r_plan').value === '1';
+  t.mistake_tags = Array.from(document.querySelectorAll('#r_tags .t.on')).map(el => el.dataset.tag);
+  t.review_notes = $('r_notes').value;
+  t.exit_suds = parseFloat($('r_exit_suds').value) || null;
+  save();
+  closeReview();
+  renderAll();
+}
+function deleteTrade(id) {
+  if (!confirm('בטוח למחוק?')) return;
+  state.trades = state.trades.filter(t => t.id !== id);
+  save();
+  closeReview();
+  renderAll();
+}
+
+// ═══════════════════════════════ ANALYTICS ═══════════════════════════════
+
+function renderAnalytics() {
+  const trades = state.trades.filter(t => t.outcome && t.outcome !== 'OPEN');
+  const week = trades.filter(t => {
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+    return new Date(t.date) >= cutoff;
+  });
+  const wins = week.filter(t => t.outcome === 'WIN');
+  const losses = week.filter(t => t.outcome === 'LOSS');
+  const wr = week.length ? Math.round(wins.length / week.length * 100) : 0;
+  const netW = week.reduce((s,t) => s + (t.pnl_usd||0), 0);
+  const followed = week.filter(t => t.followed_plan).length;
+  const discipline = week.length ? Math.round(followed / week.length * 100) : 0;
+
+  $('weeklyStats').innerHTML = `
+    <div class="card"><div class="stat"><span class="label">עסקאות</span>
+      <span class="value">${week.length}</span><span class="sub">${wins.length}W · ${losses.length}L</span></div></div>
+    <div class="card"><div class="stat ${wr>=50?'pos':'neg'}"><span class="label">Win Rate</span>
+      <span class="value">${wr}%</span></div></div>
+    <div class="card"><div class="stat ${netW>0?'pos':netW<0?'neg':''}"><span class="label">Net P&L</span>
+      <span class="value">${fmt$(netW)}</span></div></div>
+    <div class="card"><div class="stat ${discipline>=80?'pos':discipline>=60?'hi':'neg'}"><span class="label">Discipline %</span>
+      <span class="value">${discipline}%</span><span class="sub">עקבת אחרי התוכנית</span></div></div>
+  `;
+
+  const rs = week.map(t => {
+    const rMult = t.pnl_usd / (t.risk_usd || 100);
+    return rMult;
+  });
+  const avgR = rs.length ? rs.reduce((s,x)=>s+x,0) / rs.length : 0;
+  const stdR = rs.length > 1 ? Math.sqrt(rs.reduce((s,x)=>s+(x-avgR)**2,0)/rs.length) : 0;
+  const sqn = stdR > 0 ? (avgR / stdR) * Math.sqrt(rs.length) : 0;
+  const sqnLabel = sqn > 2.5 ? '🏆 ELITE' : sqn > 2 ? '✅ GOOD' : sqn > 1.6 ? '⚠️ AVERAGE' : sqn > 0 ? '❌ POOR' : '—';
+  const sqnColor = sqn > 2 ? 'pos' : sqn > 1.6 ? 'hi' : 'neg';
+  $('sqnCard').innerHTML = `
+    <div class="grid grid-3">
+      <div class="stat ${sqnColor}"><span class="label">SQN שבועי</span>
+        <span class="value">${fmt(sqn)}</span><span class="sub">${sqnLabel}</span></div>
+      <div class="stat"><span class="label">R ממוצע</span>
+        <span class="value">${fmt(avgR)}</span></div>
+      <div class="stat"><span class="label">Std Dev</span>
+        <span class="value">${fmt(stdR)}</span></div>
+    </div>
+    <div class="helper" style="margin-top:10px;">
+      SQN מעל 2.0 = מערכת טובה · מעל 2.5 = ELITE · מתחת ל-1.6 = צריך תיקון (Van Tharp)
+    </div>`;
+
+  $('disciplineCard').innerHTML = `
+    <div class="progress"><div class="progress-bar ${discipline>=80?'':discipline>=60?'warn':'bad'}" style="width:${discipline}%;"></div></div>
+    <div class="grid grid-3" style="margin-top:12px;">
+      <div class="stat"><span class="label">עקבת</span><span class="value">${followed}/${week.length}</span></div>
+      <div class="stat"><span class="label">Grade A</span><span class="value">${week.filter(t=>t.execution_grade==='A').length}</span></div>
+      <div class="stat"><span class="label">טעויות שסומנו</span><span class="value">${week.reduce((s,t)=>s+(t.mistake_tags||[]).length,0)}</span></div>
+    </div>
+  `;
+
+  renderInsights(week);
+  renderByHour(week);
+}
+
+function renderInsights(week) {
+  if (week.length < 5) {
+    $('insights').innerHTML = `<div class="empty-hint">צריך לפחות 5 עסקאות סגורות כדי לזהות דפוסים.</div>`;
+    return;
+  }
+  const insights = [];
+  const tags = {};
+  week.forEach(t => (t.mistake_tags || []).forEach(x => tags[x] = (tags[x]||0) + 1));
+  const topMistake = Object.entries(tags).sort((a,b) => b[1] - a[1])[0];
+  if (topMistake) insights.push(`🔴 <strong>הטעות הכי נפוצה שלך:</strong> "${topMistake[0]}" קרתה ${topMistake[1]} פעמים השבוע.`);
+
+  const byHour = {};
+  week.forEach(t => {
+    const h = new Date(t.ts).getHours();
+    byHour[h] = byHour[h] || { wins:0, losses:0, pnl:0 };
+    if (t.outcome === 'WIN') byHour[h].wins++;
+    if (t.outcome === 'LOSS') byHour[h].losses++;
+    byHour[h].pnl += t.pnl_usd || 0;
+  });
+  const worst = Object.entries(byHour).filter(([_,v]) => v.wins+v.losses >= 2)
+    .sort((a,b) => a[1].pnl - b[1].pnl)[0];
+  if (worst) insights.push(`⏰ <strong>השעה הכי גרועה:</strong> ${worst[0]}:00 · ${fmt$(worst[1].pnl)} P&L (${worst[1].wins}W ${worst[1].losses}L)`);
+
+  const revenge = week.filter(t => (t.mistake_tags || []).includes('revenge'));
+  if (revenge.length > 0) {
+    const revP = revenge.reduce((s,t) => s + (t.pnl_usd||0), 0);
+    insights.push(`⚠️ <strong>Revenge trades השבוע:</strong> ${revenge.length} עסקאות · ${fmt$(revP)}. כאב מוכיח שזה עולה כסף.`);
+  }
+  const followed = week.filter(t => t.followed_plan);
+  const notFollowed = week.filter(t => t.followed_plan === false);
+  if (followed.length && notFollowed.length) {
+    const fP = followed.reduce((s,t)=>s+(t.pnl_usd||0),0);
+    const nfP = notFollowed.reduce((s,t)=>s+(t.pnl_usd||0),0);
+    insights.push(`🎯 <strong>עקבת אחרי התוכנית:</strong> ${fmt$(fP)}. <strong>סטית ממנה:</strong> ${fmt$(nfP)}. ההוכחה מול העיניים.`);
+  }
+  const highSuds = week.filter(t => t.entry_suds >= 6);
+  const lowSuds = week.filter(t => t.entry_suds <= 3);
+  if (highSuds.length >= 2 && lowSuds.length >= 2) {
+    const hP = highSuds.reduce((s,t)=>s+(t.pnl_usd||0),0);
+    const lP = lowSuds.reduce((s,t)=>s+(t.pnl_usd||0),0);
+    insights.push(`🧠 <strong>SUDS גבוה vs נמוך:</strong> P&L במצב מתוח ${fmt$(hP)} · במצב רגוע ${fmt$(lP)}. הראש שולט בכיס.`);
+  }
+
+  $('insights').innerHTML = insights.length ? insights.map(i =>
+    `<div class="coach-card" style="margin-bottom:8px;"><div class="body">${i}</div></div>`).join('')
+    : `<div class="empty-hint">עדיין לא זוהו דפוסים. תמשיך למלא סקירות אחרי כל עסקה.</div>`;
+}
+
+function renderByHour(week) {
+  const byHour = {};
+  week.forEach(t => {
+    const h = new Date(t.ts).getHours();
+    byHour[h] = byHour[h] || { wins:0, losses:0 };
+    if (t.outcome === 'WIN') byHour[h].wins++;
+    if (t.outcome === 'LOSS') byHour[h].losses++;
+  });
+  const hours = Object.keys(byHour).sort();
+  if (!hours.length) { $('byHour').innerHTML = `<div class="helper">אין נתונים.</div>`; return; }
+  $('byHour').innerHTML = hours.map(h => {
+    const v = byHour[h];
+    const total = v.wins + v.losses;
+    const wr = Math.round(v.wins / total * 100);
+    return `
+      <div class="hbar">
+        <span class="lbl mono">${h}:00</span>
+        <div class="bar-wrap"><div class="bar ${wr<50?'neg':''}" style="width:${wr}%;"></div></div>
+        <span class="val">${wr}% (${v.wins}W ${v.losses}L)</span>
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════ PLAYBOOK ═══════════════════════════════
+
+function renderPlaybook() {
+  $('playbookList').innerHTML = state.playbook.map((p, i) => `
+    <div class="playbook-card" style="display:flex;justify-content:space-between;align-items:start;gap:12px;">
+      <div style="flex:1;">
+        <div class="name">${p.name}</div>
+        <div class="criteria">${p.criteria}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:end;">
+        <div class="risk-tier">$${p.riskTier}</div>
+        <button class="btn ghost small" onclick="pbEdit(${i})">ערוך</button>
+        <button class="btn bad small" onclick="pbDel(${i})">מחק</button>
+      </div>
+    </div>`).join('');
+}
+function pbAdd() {
+  const name = prompt('שם ה-Setup:'); if (!name) return;
+  const criteria = prompt('קריטריון (מה מגדיר את ה-Setup):') || '';
+  const riskTier = parseInt(prompt('סיכון $ (100/120/150):') || '100');
+  state.playbook.push({ id: 'p_' + nowMs(), name, criteria, riskTier });
+  save(); renderPlaybook();
+}
+function pbEdit(i) {
+  const p = state.playbook[i];
+  const name = prompt('שם:', p.name); if (name === null) return;
+  const criteria = prompt('קריטריון:', p.criteria) || '';
+  const riskTier = parseInt(prompt('סיכון $:', p.riskTier) || '100');
+  state.playbook[i] = { ...p, name, criteria, riskTier };
+  save(); renderPlaybook();
+}
+function pbDel(i) {
+  if (!confirm('למחוק?')) return;
+  state.playbook.splice(i, 1); save(); renderPlaybook();
+}
+
+// ═══════════════════════════════ SETTINGS ═══════════════════════════════
+
+function renderSettings() {
+  const s = state.settings;
+  $('s_dailyCap').value = s.dailyCap;
+  $('s_maxTrades').value = s.maxTrades;
+  $('s_coolAfter').value = s.coolAfter;
+  $('s_coolMin').value = s.coolMin;
+  $('s_giveback').value = s.giveback;
+  $('s_sudsMax').value = s.sudsMax;
+  $('s_signalsUrl').value = s.signalsUrl;
+}
+function settingsSave() {
+  state.settings = {
+    dailyCap: parseFloat($('s_dailyCap').value) || 300,
+    maxTrades: parseInt($('s_maxTrades').value) || 3,
+    coolAfter: parseInt($('s_coolAfter').value) || 2,
+    coolMin: parseInt($('s_coolMin').value) || 15,
+    giveback: parseFloat($('s_giveback').value) || 30,
+    sudsMax: parseInt($('s_sudsMax').value) || 6,
+    signalsUrl: $('s_signalsUrl').value,
+  };
+  save(); renderAll();
+  alert('✓ נשמר');
+}
+function exportAll() {
+  const blob = new Blob([JSON.stringify({
+    trades: state.trades, playbook: state.playbook, settings: state.settings
+  }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `discipline-terminal-${todayKey()}.json`;
+  a.click();
+}
+function importAll(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.trades)   state.trades = data.trades;
+      if (data.playbook) state.playbook = data.playbook;
+      if (data.settings) state.settings = { ...state.settings, ...data.settings };
+      save(); renderAll();
+      alert('✓ שוחזר');
+    } catch (err) { alert('שגיאה בקריאת הקובץ.'); }
+  };
+  reader.readAsText(file);
+}
+function resetAll() {
+  localStorage.clear();
+  location.reload();
+}
+
+// ═══════════════════════════════ BOT FETCH ═══════════════════════════════
+
+async function fetchBotSignals(forceRefresh = false) {
+  const cacheAge = (nowMs() - state.botCache.fetchedAt) / 1000;
+  if (!forceRefresh && cacheAge < 55) return;
+  const status = $('botFetchStatus');
+  if (status) status.textContent = 'מוריד...';
+  try {
+    const r = await fetch(state.settings.signalsUrl + '?_=' + nowMs());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : (data.signals || []);
+    state.botCache = { fetchedAt: nowMs(), data: arr };
+    save();
+    if (status) status.textContent = `✓ ${arr.length} איתותים · ${new Date().toLocaleTimeString('he-IL')}`;
+    renderAll();
+  } catch (e) {
+    if (status) status.textContent = `❌ שגיאה: ${e.message}`;
+  }
+}
+
+// ═══════════════════════════════ TABS + INIT ═══════════════════════════════
+
+function showTab(name) {
+  document.querySelectorAll('nav.tabs button').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('section.tab').forEach(s =>
+    s.classList.toggle('active', s.id === 'tab-' + name));
+  if (name === 'today') renderToday();
+  if (name === 'entry') renderEntry();
+  if (name === 'journal') renderJournal();
+  if (name === 'analytics') renderAnalytics();
+  if (name === 'playbook') renderPlaybook();
+  if (name === 'settings') renderSettings();
+}
+
+function renderAll() {
+  renderHeader();
+  const active = document.querySelector('nav.tabs button.active').dataset.tab;
+  showTab(active);
+}
+
+document.querySelectorAll('nav.tabs button').forEach(b =>
+  b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+['ent_entry','ent_stop','ent_target','ent_symbol','ent_direction'].forEach(id =>
+  document.addEventListener('input', e => {
+    if (e.target.id === id) renderPosCalc();
+  }));
+
+document.addEventListener('input', e => {
+  if (['journalFilterSource','journalFilterRange'].includes(e.target.id)) renderJournal();
+});
+
+// Live clock tick — refresh status + cooldown timer every second
+setInterval(() => {
+  if (document.querySelector('nav.tabs button.active').dataset.tab === 'today') renderToday();
+  renderHeader();
+}, 1000);
+
+// Bot fetch every 60s
+setInterval(() => fetchBotSignals(false), 60000);
+
+// First load
+renderAll();
+fetchBotSignals(true);
+</script>
