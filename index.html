@@ -1885,8 +1885,9 @@ let bootDone = false;
 function oathKey() { return 'dt_oath_' + todayKey(); }
 
 function shouldShowWelcome() {
-  // Skip if oath already taken today
-  return !LS.get(oathKey(), false);
+  // Always show on every refresh — user's rule: the oath must be re-committed
+  // each time the terminal loads, so the discipline stays present.
+  return true;
 }
 
 function typeBoot() {
