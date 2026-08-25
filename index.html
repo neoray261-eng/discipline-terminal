@@ -418,6 +418,9 @@
 
     <div id="cooldownHost"></div>
 
+    <h2 class="section-title">💼 Take Profit · חי מ-Tradovate</h2>
+    <div id="tpLivePanel"></div>
+
     <h2 class="section-title">SUDS · צ'ק-אין רגשי (0-10)</h2>
     <div class="card" id="sudsCard"></div>
 
@@ -939,7 +942,94 @@ function renderToday() {
   renderSudsCard();
   renderTodayStats();
   renderBotSignalsToday();
+  renderTakeProfit();
 }
+
+// ── TAKE PROFIT LIVE PANEL ────────────────────────────────────────────
+// Reads takeprofit_trades.json pushed every 5 min by the TP Tampermonkey
+// userscript running in the user's browser. Shows account balances,
+// P&L today, open positions, sync freshness, and a big button to reopen
+// the Tradovate tab (which the userscript needs open to work).
+var _tpLastData = null;
+async function renderTakeProfit() {
+  const host = $('tpLivePanel');
+  if (!host) return;
+  const url = 'https://raw.githubusercontent.com/neoray261-eng/trading-journal-data/main/takeprofit_trades.json?ts=' + Date.now();
+  let d = null;
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if (r.ok) d = await r.json();
+  } catch(e) {}
+  if (!d || !Array.isArray(d.accounts)) {
+    host.innerHTML = `<div class="card warn">
+      <div style="margin-bottom:8px;">אין עדיין נתוני Take Profit חיים.</div>
+      <a href="https://trader.tradovate.com/" target="_blank" rel="noopener"
+         style="display:inline-block;padding:8px 16px;font-weight:700;background:rgba(0,217,163,0.15);color:var(--bull);border:1px solid var(--bull);border-radius:6px;text-decoration:none;">
+        ▶ פתח Tradovate
+      </a>
+    </div>`;
+    return;
+  }
+  _tpLastData = d;
+  const when = new Date(d.generated_at);
+  const mins = Math.round((Date.now() - when.getTime()) / 60000);
+  const stale = mins > 60;
+  const stamp = mins < 2 ? 'סונכרן עכשיו'
+              : mins < 60 ? `סונכרן לפני ${mins} דק'`
+                          : `סונכרן לפני ${Math.round(mins/60)} שע' — ישן!`;
+  const openPos = d.accounts.reduce((n,a) => n + ((a.open_positions||[]).length), 0);
+
+  const accountsHtml = d.accounts.map(a => {
+    const pnl = a.realized_pnl_today || 0;
+    const pnlColor = pnl > 0 ? 'var(--bull)' : pnl < 0 ? 'var(--bear)' : 'var(--muted)';
+    const pnlSign = pnl > 0 ? '+' : pnl < 0 ? '-' : '';
+    const bal = (a.balance_current || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `
+      <div class="card">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--bull);letter-spacing:1px;margin-bottom:8px;">${a.name}</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+          <span class="label" style="color:var(--muted);font-size:11px;">יתרה</span>
+          <span class="mono" style="font-size:22px;font-weight:700;">$${bal}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+          <span class="label" style="color:var(--muted);font-size:11px;">רווח היום</span>
+          <span class="mono" style="font-size:14px;font-weight:700;color:${pnlColor};">${pnlSign}$${Math.abs(pnl).toFixed(2)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <span class="label" style="color:var(--muted);font-size:11px;">עסקאות היום</span>
+          <span class="mono" style="font-size:14px;color:var(--info);">${a.fills_today || 0}</span>
+        </div>
+        ${(a.open_positions && a.open_positions.length) ? `
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;color:var(--star);">
+            ⚡ ${a.open_positions.length} פוזיציות פתוחות
+          </div>` : ''}
+      </div>`;
+  }).join('');
+
+  host.innerHTML = `
+    <div class="card ok" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="mono" style="font-size:11px;color:${stale ? 'var(--star)' : 'var(--bull)'};letter-spacing:1px;">
+          ${stale ? '⚠️ ' : '✓ '} ${stamp}
+        </span>
+        <a href="https://trader.tradovate.com/" target="_blank" rel="noopener"
+           style="padding:8px 16px;font-weight:700;font-size:13px;background:rgba(0,217,163,0.15);color:var(--bull);border:1px solid var(--bull);border-radius:6px;text-decoration:none;letter-spacing:0.5px;">
+          ▶ פתח Tradovate
+        </a>
+      </div>
+      ${stale ? `
+        <div style="margin-top:10px;padding:8px 12px;background:rgba(255,180,84,0.1);border:1px solid rgba(255,180,84,0.4);border-radius:6px;font-size:12px;color:var(--star);">
+          הסנכרון עצר לפני מעל שעה — כנראה סגרת את הטאב של Tradovate. לחץ על ▶ למעלה כדי לחדש.
+        </div>` : ''}
+    </div>
+    <div class="grid grid-2">${accountsHtml}</div>
+  `;
+}
+// Auto-refresh every 60 seconds while the "היום" tab is active
+setInterval(() => {
+  const activeTab = document.querySelector('nav.tabs button.active');
+  if (activeTab && activeTab.dataset.tab === 'today') renderTakeProfit();
+}, 60000);
 
 function renderSudsCard() {
   const key = 'dt_suds_' + todayKey();
