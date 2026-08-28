@@ -2010,8 +2010,9 @@ function showOathAgain() {
   setTimeout(typeBoot, 300);
 }
 
-// First load
-renderAll();
-fetchBotSignals(true);
-maybeShowWelcome();
+// First load — welcome MUST run first so any downstream exception in
+// renderAll / fetchBotSignals doesn't hide the oath screen.
+try { maybeShowWelcome(); } catch (e) { console.error('welcome failed', e); }
+try { renderAll(); }         catch (e) { console.error('renderAll failed', e); }
+try { fetchBotSignals(true); } catch (e) { console.error('fetchBotSignals failed', e); }
 </script>
