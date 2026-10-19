@@ -449,6 +449,7 @@
           <option value="MNQ">MNQ · Micro NASDAQ</option>
           <option value="MES">MES · Micro S&P 500</option>
           <option value="MGC">MGC · Micro Gold</option>
+          <option value="MCL">MCL · Micro Oil (WTI)</option>
           <option value="NQ">NQ · NASDAQ</option>
           <option value="ES">ES · S&P 500</option>
           <option value="GC">GC · Gold</option>
@@ -1152,7 +1153,10 @@ function renderPosCalc() {
   const symbol = $('ent_symbol').value;
   const pb = state.playbook.find(p => p.id === state.entryPlaybookId);
   const riskUsd = pb ? pb.riskTier : 100;
-  const pointValue = { MNQ: 2, MES: 5, MGC: 1, NQ: 20, ES: 50, GC: 10 }[symbol] || 2;
+  // BUGFIX 2026-10-19: MGC/GC were off by 10x (COMEX Gold = 100 troy oz/pt
+  // = $100/pt; Micro Gold = 10 troy oz/pt = $10/pt) — this was sizing gold
+  // positions 10x too large. MCL (Micro WTI, 100 barrels) added: $1/pt = $100.
+  const pointValue = { MNQ: 2, MES: 5, MGC: 10, MCL: 100, NQ: 20, ES: 50, GC: 100 }[symbol] || 2;
   const contractsRaw = stopPts > 0 ? riskUsd / (stopPts * pointValue) : 0;
   const contracts = Math.max(0, Math.floor(contractsRaw));
   const actualRisk = contracts * stopPts * pointValue;
@@ -1228,7 +1232,8 @@ function submitEntry() {
   const entry = parseFloat($('ent_entry').value) || null;
   const symbol = $('ent_symbol').value;
   const direction = $('ent_direction').value;
-  const pointValue = { MNQ:2, MES:5, MGC:1, NQ:20, ES:50, GC:10 }[symbol] || 2;
+  // Same fix as renderPosCalc(): MGC/GC corrected, MCL added — see note there.
+  const pointValue = { MNQ:2, MES:5, MGC:10, MCL:100, NQ:20, ES:50, GC:100 }[symbol] || 2;
   const contracts = stopPts > 0 ? Math.floor(pb.riskTier / (stopPts * pointValue)) : 0;
   const rr = stopPts > 0 ? targetPts / stopPts : 0;
   // Derive implicit stop/target prices for the journal if entry provided.
